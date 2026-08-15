@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block titulo %}Presupuestos{% endblock %}
+{% block cabecera %}<h1>Presupuestos</h1>{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <a class="btn btn-primario" href="{{ url_for('presupuesto_nuevo') }}"><i class="fa-solid fa-file-circle-plus"></i> Nuevo presupuesto</a>
+</div>
+
+<section class="card">
+  {% if rows %}
+  <table class="tabla">
+    <thead><tr><th>Número</th><th>Proyecto</th><th>Cliente</th><th>Fecha</th><th>Base</th><th>IVA</th><th>Total</th><th>Estado</th><th class="col-acciones">Acciones</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      {% set iva_pct = r.iva or 21 %}
+      {% set base = (r.total_bruto or 0) * (1 - (r.descuento_global or 0)/100) %}
+      {% set total = base * (1 + iva_pct/100) %}
+      <tr>
+        <td><a href="{{ url_for('presupuesto_detalle', pid=r.id) }}"><strong>{{ r.numero }}</strong></a></td>
+        <td>{{ r.proyecto }}</td>
+        <td>{{ r.cliente or '—' }}</td>
+        <td>{{ r.fecha }}</td>
+        <td>{{ ("%.2f"|format(base)).replace('.',',') }} €</td>
+        <td>{{ ("%.2f"|format(base * iva_pct/100)).replace('.',',') }} €</td>
+        <td><strong>{{ ("%.2f"|format(total)).replace('.',',') }} €</strong></td>
+        <td><span class="etiqueta {{ r.estado }}">{{ r.estado }}</span></td>
+        <td class="col-acciones">
+          <a class="btn btn-icono" href="{{ url_for('presupuesto_detalle', pid=r.id) }}" title="Ver"><i class="fa-solid fa-eye"></i></a>
+          <a class="btn btn-icono" href="{{ url_for('presupuesto_pdf', pid=r.id) }}" title="PDF editable"><i class="fa-solid fa-file-pdf"></i></a>
+          <form method="POST" action="{{ url_for('presupuesto_eliminar', pid=r.id) }}" onsubmit="return confirm('¿Eliminar el presupuesto?')">
+            <button class="btn btn-icono btn-peligro"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="vacio">No hay presupuestos.</p>
+  {% endif %}
+</section>
+{% endblock %}

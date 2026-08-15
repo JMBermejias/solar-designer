@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block titulo %}Herramientas{% endblock %}
+{% block cabecera %}<h1>Herramientas y recursos</h1>{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <button class="btn btn-primario" onclick="abrirModal('modal-herramienta', null)"><i class="fa-solid fa-plus"></i> Nueva herramienta</button>
+</div>
+
+<section class="card">
+  {% if rows %}
+  <table class="tabla">
+    <thead><tr><th>Imagen</th><th>Nombre</th><th>Categoría</th><th>Cantidad</th><th>Estado</th><th>Ubicación</th><th class="col-acciones">Acciones</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td class="td-img">
+          {% if r.imagen %}<img src="{{ url_for('uploads', nombre=r.imagen) }}" onclick="abrirLightbox(this.src)">{% else %}<i class="fa-solid fa-toolbox"></i>{% endif %}
+        </td>
+        <td><strong>{{ r.nombre }}</strong><br><small>{{ r.descripcion }}</small></td>
+        <td>{{ r.categoria }}</td>
+        <td>{{ r.cantidad }}</td>
+        <td><span class="etiqueta estado-{{ r.estado }}">{{ r.estado }}</span></td>
+        <td>{{ r.ubicacion or '—' }}</td>
+        <td class="col-acciones">
+          <button class="btn btn-icono" onclick='abrirModal("modal-herramienta", {{ r | tojson }})' title="Editar"><i class="fa-solid fa-pen"></i></button>
+          <form method="POST" action="{{ url_for('herramienta_eliminar', id=r.id) }}" onsubmit="return confirm('¿Eliminar esta herramienta?')">
+            <button class="btn btn-icono btn-peligro"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="vacio">No hay herramientas registradas.</p>
+  {% endif %}
+</section>
+
+<div id="modal-herramienta" class="modal">
+  <div class="modal-caja">
+    <div class="modal-cab"><h3 id="titulo-herramienta">Nueva herramienta</h3><button class="btn-icono" onclick="cerrarModal('modal-herramienta')">&times;</button></div>
+    <form method="POST" action="{{ url_for('herramienta_guardar') }}" enctype="multipart/form-data" class="form-grid">
+      <input type="hidden" name="id" id="he-id">
+      <label>Nombre * <input name="nombre" id="he-nombre" required></label>
+      <label>Categoría
+        <select name="categoria" id="he-categoria">
+          {% for c in cat_herr %}<option value="{{ c }}">{{ c|capitalize }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Cantidad <input type="number" step="any" min="0" name="cantidad" id="he-cantidad" value="1"></label>
+      <label>Estado
+        <select name="estado" id="he-estado">
+          <option value="operativo">Operativo</option>
+          <option value="en mantenimiento">En mantenimiento</option>
+          <option value="alquiler">Alquiler</option>
+          <option value="baja">Baja</option>
+        </select>
+      </label>
+      <label>Ubicación <input name="ubicacion" id="he-ubicacion"></label>
+      <label class="ancho-total">Descripción <textarea name="descripcion" id="he-descripcion" rows="2"></textarea></label>
+      <label class="ancho-total">Imagen
+        <input type="file" name="imagen" accept="image/*" onchange="previewImagen(this, 'he-preview')">
+        <img id="he-preview" class="preview-img" style="display:none" alt="">
+      </label>
+      <div class="form-acciones ancho-total">
+        <button class="btn btn-primario"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+        <button type="button" class="btn" onclick="cerrarModal('modal-herramienta')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

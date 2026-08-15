@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block titulo %}{{ p.nombre }}{% endblock %}
+{% block cabecera %}
+  <h1>{{ p.nombre }} <span class="etiqueta {{ p.estado|replace(' ','-') }}">{{ p.estado }}</span></h1>
+{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <a class="btn" href="{{ url_for('proyecto_form', pid=p.id) }}"><i class="fa-solid fa-pen"></i> Editar</a>
+  <form method="POST" action="{{ url_for('presupuesto_nuevo') }}" style="display:inline">
+    <input type="hidden" name="proyecto_id" value="{{ p.id }}">
+    <input type="hidden" name="fecha" value="{{ today }}">
+    <button class="btn btn-primario"><i class="fa-solid fa-file-invoice-dollar"></i> Crear presupuesto</button>
+  </form>
+  <form method="POST" action="{{ url_for('memoria_nueva') }}" style="display:inline">
+    <input type="hidden" name="proyecto_id" value="{{ p.id }}">
+    <button class="btn btn-primario"><i class="fa-solid fa-book"></i> Crear memoria</button>
+  </form>
+  <a class="btn btn-primario" href="{{ url_for('mant_libro', pid=p.id) }}"><i class="fa-solid fa-book-open"></i> Libro de mantenimiento PDF</a>
+  <form method="POST" action="{{ url_for('proyecto_eliminar', pid=p.id) }}" onsubmit="return confirm('¿Eliminar el proyecto?')" style="display:inline">
+    <button class="btn btn-peligro"><i class="fa-solid fa-trash"></i> Eliminar</button>
+  </form>
+</div>
+
+{% if p.imagen_fachada or p.imagen_plano or p.imagen_planta or p.imagen_extra1 or p.imagen_extra2 %}
+<section class="card">
+  <div class="card-titulo"><h3><i class="fa-solid fa-images"></i> Imágenes del proyecto</h3></div>
+  <div class="grid-fotos-mini">
+    {% for campo in ['imagen_fachada','imagen_plano','imagen_planta','imagen_extra1','imagen_extra2'] %}
+      {% set img = p[campo] %}
+      {% if img %}
+        <figure><img src="{{ url_for('uploads', nombre=img) }}" onclick="abrirLightbox(this.src)"><figcaption>{{ campo|replace('imagen_','')|capitalize }}</figcaption></figure>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<div class="dos-col">
+  <section class="card">
+    <div class="card-titulo"><h3><i class="fa-solid fa-circle-info"></i> Datos del proyecto</h3></div>
+    <table class="datos">
+      <tr><th>Cliente</th><td>{{ cliente.nombre if cliente else '—' }}</td></tr>
+      <tr><th>Ubicación</th><td>{{ p.direccion or '—' }} · {{ p.ciudad or '—' }}</td></tr>
+      <tr><th>Coordenadas</th><td>{{ p.lat }} / {{ p.lon }}</td></tr>
+      <tr><th>Cubierta</th><td>{{ p.tipo_cubierta or '—' }} · {{ p.superficie_m2 or 0 }} m²</td></tr>
+      <tr><th>Orientación / inclinación</th><td>{{ p.orientacion_deg }}° / {{ p.inclinacion_deg }}°</td></tr>
+      <tr><th>Consumo anual</th><td>{{ "{:,.0f}".format(res.consumo_anual_kwh).replace(',','.') }} kWh</td></tr>
+    </table>
+  </section>
+
+  <section class="card">
+    <div class="card-titulo"><h3><i class="fa-solid fa-solar-panel"></i> Resultados del cálculo</h3></div>
+    <table class="datos">
+      <tr><th>Potencia pico</th><td><strong>{{ "%.2f"|format(res.potencia_pico_kw) }} kWp</strong></td></tr>
+      <tr><th>Módulos necesarios</th><td>{{ res.n_paneles }} × {{ "%.0f"|format(res.panel_potencia_w) }} Wp</td></tr>
+      <tr><th>Superficie captación</th><td>{{ "%.1f"|format(res.superficie_necesaria_m2) }} m²</td></tr>
+      <tr><th>Inversor recomendado</th><td>{{ "%.1f"|format(res.potencia_inversor_kw) }} kW</td></tr>
+      <tr><th>Producción anual</th><td>{{ "{:,.0f}".format(res.produccion_anual_kwh).replace(',','.') }} kWh ({{ "{:,.0f}".format(res.produccion_anual_kwh_kwp).replace(',','.') }} kWh/kWp)</td></tr>
+      <tr><th>Cobertura consumo</th><td>{{ "%.1f"|format(res.cobertura_consumo_pct) }} %</td></tr>
+      <tr><th>PR estimado</th><td>{{ "%.2f"|format(res.pr_estimado) }}</td></tr>
+      <tr><th>CO₂ evitado</th><td>{{ "{:,.0f}".format(res.co2_anual_kg).replace(',','.') }} kg/año</td></tr>
+    </table>
+    {% if res.bateria %}
+    <h4 style="margin:12px 0 4px"><i class="fa-solid fa-car-battery"></i> Almacenamiento (LFP)</h4>
+    <table class="datos">
+      <tr><th>Autonomía</th><td>{{ "%g"|format(res.bateria.autonomia_dias) }} día(s) · DOD {{ "%g"|format(res.bateria.dod_pct) }}%</td></tr>
+      <tr><th>Capacidad total</th><td>{{ "%.1f"|format(res.bateria.capacidad_total_kwh) }} kWh ({{ "{:,.0f}".format(res.bateria.capacidad_ah).replace(',','.') }} Ah a {{ "%g"|format(res.bateria.tension_v) }} V)</td></tr>
+      <tr><th>Capacidad útil</th><td>{{ "%.1f"|format(res.bateria.capacidad_util_kwh) }} kWh</td></tr>
+      <tr><th>Banco recomendado</th><td><strong>{{ res.bateria.n_modulos }} × {{ "%.2f"|format(res.bateria.modulo_kwh) }} kWh = {{ "%.1f"|format(res.bateria.capacidad_instalada_kwh) }} kWh</strong></td></tr>
+    </table>
+    {% endif %}
+    {% if res.inversion %}
+    <h4 style="margin:12px 0 4px"><i class="fa-solid fa-chart-line"></i> Análisis de inversión</h4>
+    <table class="datos">
+      <tr><th>Inversión inicial</th><td>{{ "{:,.0f}".format(res.inversion.inversion_total).replace(',','.') }} €</td></tr>
+      {% if res.inversion.subvencion %}
+      <tr><th>Subvención</th><td>- {{ "{:,.0f}".format(res.inversion.subvencion).replace(',','.') }} €</td></tr>
+      {% endif %}
+      <tr><th>Inversión neta</th><td>{{ "{:,.0f}".format(res.inversion.inversion_neta).replace(',','.') }} €</td></tr>
+      <tr><th>Ahorro anual (año 1)</th><td>{{ "{:,.0f}".format(res.inversion.ahorro_anual_eur).replace(',','.') }} €/año</td></tr>
+      <tr><th>Mantenimiento anual</th><td>{{ "{:,.0f}".format(res.inversion.costo_mantenimiento_anual).replace(',','.') }} €/año</td></tr>
+      <tr><th>Retorno simple</th><td>{{ "%g"|format(res.inversion.payback_anos) if res.inversion.payback_anos else '> ' ~ res.inversion.vida_util }} años</td></tr>
+      <tr><th>Retorno descontado ({{ "%g"|format(res.inversion.tasa_descuento_pct) }}%)</th><td>{{ "%g"|format(res.inversion.payback_descontado_anos) if res.inversion.payback_descontado_anos else '> ' ~ res.inversion.vida_util }} años</td></tr>
+      <tr><th>VAN ({{ res.inversion.vida_util }} años)</th><td>{{ "{:,.0f}".format(res.inversion.van_eur).replace(',','.') }} €</td></tr>
+      <tr><th>TIR</th><td>{{ "%g"|format(res.inversion.tir_pct) if res.inversion.tir_pct is not none else '—' }} %</td></tr>
+      <tr><th>ROI total</th><td>{{ "%g"|format(res.inversion.roi_total_pct) }} %</td></tr>
+      <tr><th>Ahorro acumulado</th><td>{{ "{:,.0f}".format(res.inversion.ahorro_acumulado_eur).replace(',','.') }} €</td></tr>
+    </table>
+    {% endif %}
+    <p class="nota"><i class="fa-solid fa-cloud-sun"></i> Datos de irradiación: <b>{{ res.fuente_radiacion }}</b></p>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-titulo"><h3><i class="fa-solid fa-chart-column"></i> Irradiación y producción mensual</h3></div>
+  <table class="tabla">
+    <thead><tr><th>Mes</th><th>GHI (kWh/m²)</th><th>GTI (kWh/m²)</th><th>HSP</th><th>Producción est. (kWh)</th></tr></thead>
+    <tbody>
+    {% for m in meses %}
+      <tr>
+        <td>{{ m }}</td>
+        <td>{{ "%.2f"|format(res.irr_horizontal_mensual[loop.index0]) }}</td>
+        <td>{{ "%.2f"|format(res.irr_inclinada_mensual[loop.index0]) }}</td>
+        <td>{{ "%.1f"|format(res.hsp_mensual[loop.index0]) }}</td>
+        <td>{{ "{:,.0f}".format(res.hsp_mensual[loop.index0] * res.potencia_pico_kw * 0.80).replace(',','.') }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><th>Total anual</th><th>{{ "%.1f"|format(res.irr_horizontal_anual) }}</th><th>{{ "%.1f"|format(res.irr_inclinada_anual) }}</th><th></th><th>{{ "{:,.0f}".format(res.produccion_anual_kwh).replace(',','.') }}</th></tr>
+    </tfoot>
+  </table>
+</section>
+
+<div class="dos-col">
+  <section class="card">
+    <div class="card-titulo"><h3><i class="fa-solid fa-boxes-stacked"></i> Añadir partidas al proyecto</h3></div>
+    <form method="POST" action="{{ url_for('proyecto_add_material', pid=p.id) }}" class="form-grid">
+      <label>Material de la base de datos
+        <select name="material_id">
+          <option value="">— Partida manual —</option>
+          {% for m in materiales %}
+            <option value="{{ m.id }}">[{{ cat_materiales.get(m.categoria, m.categoria) }}] {{ m.nombre }} — {{ "%.2f"|format(m.precio_unitario) }} €</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Cantidad <input type="number" step="any" min="0" name="cantidad" value="1"></label>
+      <label>Categoría partida manual
+        <select name="categoria">{% for k, v in cat_materiales.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+      </label>
+      <label>Descripción partida manual <input name="descripcion" placeholder="Ej. Mano de obra instalación"></label>
+      <label>Precio unit. manual (€) <input type="number" step="0.01" name="precio_unitario" value="0"></label>
+      <div class="form-acciones">
+        <button class="btn btn-primario"><i class="fa-solid fa-plus"></i> Añadir partida</button>
+      </div>
+    </form>
+
+    <h4 style="margin-top:14px">Partidas incluidas ({{ lineas|length }})</h4>
+    {% if lineas %}
+    <table class="tabla">
+      <thead><tr><th>Descripción</th><th>Cant.</th><th>Precio</th><th>Importe</th><th></th></tr></thead>
+      <tbody>
+      {% set ns = namespace(total=0.0) %}
+      {% for l in lineas %}
+        {% set importe = l.cantidad * l.precio_unitario %}
+        {% set ns.total = ns.total + importe %}
+        <tr>
+          <td>{{ l.descripcion }}</td>
+          <td>{{ "%.2f"|format(l.cantidad) }}</td>
+          <td>{{ ("%.2f"|format(l.precio_unitario)).replace('.',',') }} €</td>
+          <td>{{ ("%.2f"|format(importe)).replace('.',',') }} €</td>
+          <td><form method="POST" action="{{ url_for('proyecto_del_material', pid=p.id, lid=l.id) }}"><button class="btn btn-icono btn-peligro"><i class="fa-solid fa-trash"></i></button></form></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      <tfoot><tr><th colspan="3">Subtotal</th><th>{{ ("%.2f"|format(ns.total)).replace('.',',') }} €</th><th></th></tr></tfoot>
+    </table>
+    {% else %}
+    <p class="vacio">Añade productos desde el catálogo para calcular el presupuesto.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-titulo"><h3><i class="fa-solid fa-folder-open"></i> Documentos del proyecto</h3></div>
+    <h4>Presupuestos</h4>
+    {% if presupuestos %}
+      {% for pr in presupuestos %}
+      <div class="fila-doc">
+        <a href="{{ url_for('presupuesto_detalle', pid=pr.id) }}">{{ pr.numero }}</a> — {{ pr.fecha }}
+        <a class="btn btn-mini" href="{{ url_for('presupuesto_pdf', pid=pr.id) }}"><i class="fa-solid fa-file-pdf"></i> PDF</a>
+      </div>
+      {% endfor %}
+    {% else %}<p class="vacio">Sin presupuestos.</p>{% endif %}
+    <h4>Memorias</h4>
+    {% if memorias %}
+      {% for m in memorias %}
+      <div class="fila-doc">
+        <span>{{ m.numero }} · v{{ m.version }}</span>
+        <a class="btn btn-mini" href="{{ url_for('memoria_pdf', mid=m.id) }}"><i class="fa-solid fa-file-pdf"></i> PDF</a>
+      </div>
+      {% endfor %}
+    {% else %}<p class="vacio">Sin memorias.</p>{% endif %}
+    <h4>Contratos</h4>
+    {% if contratos %}
+      {% for c in contratos %}
+      <div class="fila-doc">
+        <a href="{{ url_for('contrato_detalle', cid=c.id) }}">{{ c.numero }}</a> — {{ c.tipo }} ({{ c.periodicidad }})
+        <a class="btn btn-mini" href="{{ url_for('contrato_pdf', cid=c.id) }}"><i class="fa-solid fa-file-pdf"></i> PDF</a>
+      </div>
+      {% endfor %}
+    {% else %}<p class="vacio">Sin contratos.</p>{% endif %}
+    <h4>Mantenimiento</h4>
+    {% if mant %}
+      {% for m in mant %}
+      <div class="fila-doc">
+        <span>{{ m.periodo }} · {{ m.fecha_programada or 'sin fecha' }} · {{ m.estado }}</span>
+        <a class="btn btn-mini" href="{{ url_for('mant_pdf', mid=m.id) }}"><i class="fa-solid fa-file-pdf"></i> PDF</a>
+      </div>
+      {% endfor %}
+    {% else %}<p class="vacio">Sin registros de mantenimiento.</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

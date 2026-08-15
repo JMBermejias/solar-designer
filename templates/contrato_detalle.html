@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block titulo %}{{ ct.numero }}{% endblock %}
+{% block cabecera %}<h1>{{ ct.numero }} <span class="etiqueta {{ ct.estado }}">{{ ct.estado }}</span></h1>{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <a class="btn btn-primario" href="{{ url_for('contrato_pdf', cid=ct.id) }}"><i class="fa-solid fa-file-pdf"></i> Descargar contrato PDF</a>
+</div>
+
+<div class="dos-col">
+  <section class="card">
+    <div class="card-titulo"><h3><i class="fa-solid fa-circle-info"></i> Datos del contrato</h3></div>
+    <table class="datos">
+      <tr><th>Cliente</th><td>{{ cliente.nombre if cliente else '—' }}</td></tr>
+      <tr><th>Proyecto</th><td>{{ proy.nombre if proy else '—' }} · {{ proy.direccion if proy else '' }}</td></tr>
+      <tr><th>Presupuesto</th><td>{{ pre.numero if pre else '—' }}</td></tr>
+      <tr><th>Importe</th><td>{{ ("%.2f"|format(ct.importe or 0)).replace('.',',') }} €</td></tr>
+      <tr><th>Periodicidad</th><td>{{ ct.periodicidad }}</td></tr>
+      <tr><th>Vigencia</th><td>{{ ct.fecha_inicio or '—' }} → {{ ct.fecha_fin or '—' }}</td></tr>
+      <tr><th>Fecha</th><td>{{ ct.fecha }}</td></tr>
+    </table>
+  </section>
+  <section class="card">
+    <div class="card-titulo"><h3><i class="fa-solid fa-list-check"></i> Tareas de mantenimiento por periodo</h3></div>
+    {% for pe in periodos %}
+      <p><span class="etiqueta periodo-{{ pe }}">{{ pe }}</span> — programa preventivo configurado en el libro de mantenimiento.</p>
+    {% endfor %}
+    <p class="nota">Puedes crear los registros del libro desde la sección <a href="{{ url_for('mantenimiento') }}">Mantenimiento</a>.</p>
+  </section>
+</div>
+
+{% if ct.condiciones %}
+<section class="card">
+  <div class="card-titulo"><h3><i class="fa-solid fa-file-lines"></i> Condiciones particulares</h3></div>
+  <p class="pre">{{ ct.condiciones }}</p>
+</section>
+{% endif %}
+{% endblock %}

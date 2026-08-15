@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titulo %}Contratos{% endblock %}
+{% block cabecera %}<h1>Contratos de mantenimiento</h1>{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <a class="btn btn-primario" href="{{ url_for('contrato_nuevo') }}"><i class="fa-solid fa-file-signature"></i> Nuevo contrato</a>
+</div>
+
+<section class="card">
+  {% if rows %}
+  <table class="tabla">
+    <thead><tr><th>Número</th><th>Cliente</th><th>Proyecto</th><th>Presupuesto</th><th>Importe</th><th>Periodicidad</th><th>Vigencia</th><th>Estado</th><th class="col-acciones">Acciones</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td><a href="{{ url_for('contrato_detalle', cid=r.id) }}"><strong>{{ r.numero }}</strong></a></td>
+        <td>{{ r.cliente or '—' }}</td>
+        <td>{{ r.proyecto or '—' }}</td>
+        <td>{{ r.presupuesto or '—' }}</td>
+        <td>{{ ("%.2f"|format(r.importe or 0)).replace('.',',') }} €</td>
+        <td><span class="etiqueta periodo-{{ r.periodicidad }}">{{ r.periodicidad }}</span></td>
+        <td>{{ r.fecha_inicio or '—' }} → {{ r.fecha_fin or '—' }}</td>
+        <td><span class="etiqueta {{ r.estado }}">{{ r.estado }}</span></td>
+        <td class="col-acciones">
+          <a class="btn btn-icono" href="{{ url_for('contrato_detalle', cid=r.id) }}" title="Ver"><i class="fa-solid fa-eye"></i></a>
+          <a class="btn btn-icono" href="{{ url_for('contrato_pdf', cid=r.id) }}" title="PDF editable"><i class="fa-solid fa-file-pdf"></i></a>
+          <form method="POST" action="{{ url_for('contrato_eliminar', cid=r.id) }}" onsubmit="return confirm('¿Eliminar el contrato?')">
+            <button class="btn btn-icono btn-peligro"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="vacio">No hay contratos.</p>
+  {% endif %}
+</section>
+{% endblock %}

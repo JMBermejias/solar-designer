@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block titulo %}Proveedores{% endblock %}
+{% block cabecera %}<h1>Base de datos de proveedores</h1>{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <button class="btn btn-primario" onclick="abrirModal('modal-proveedor', null)"><i class="fa-solid fa-truck-fast"></i> Nuevo proveedor</button>
+</div>
+
+<section class="card">
+  {% if rows %}
+  <table class="tabla">
+    <thead><tr><th>Nombre</th><th>NIF</th><th>Población</th><th>Teléfono</th><th>Email</th><th>Contacto</th><th class="col-acciones">Acciones</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td><strong>{{ r.nombre }}</strong></td>
+        <td>{{ r.nif or '—' }}</td>
+        <td>{{ r.ciudad or '—' }}</td>
+        <td>{{ r.telefono or '—' }}</td>
+        <td>{{ r.email or '—' }}</td>
+        <td>{{ r.contacto or '—' }}</td>
+        <td class="col-acciones">
+          <button class="btn btn-icono" onclick='abrirModal("modal-proveedor", {{ r | tojson }})'><i class="fa-solid fa-pen"></i></button>
+          <form method="POST" action="{{ url_for('proveedor_eliminar', id=r.id) }}" onsubmit="return confirm('¿Eliminar este proveedor?')">
+            <button class="btn btn-icono btn-peligro"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="vacio">No hay proveedores registrados.</p>
+  {% endif %}
+</section>
+
+<div id="modal-proveedor" class="modal">
+  <div class="modal-caja">
+    <div class="modal-cab"><h3 id="titulo-proveedor">Nuevo proveedor</h3><button class="btn-icono" onclick="cerrarModal('modal-proveedor')">&times;</button></div>
+    <form method="POST" action="{{ url_for('proveedor_guardar') }}" class="form-grid">
+      <input type="hidden" name="id" id="pr-id">
+      <label>Nombre * <input name="nombre" id="pr-nombre" required></label>
+      <label>NIF/CIF <input name="nif" id="pr-nif"></label>
+      <label>Dirección <input name="direccion" id="pr-direccion"></label>
+      <label>C.P. <input name="cp" id="pr-cp"></label>
+      <label>Ciudad <input name="ciudad" id="pr-ciudad"></label>
+      <label>Teléfono <input name="telefono" id="pr-telefono"></label>
+      <label>Email <input type="email" name="email" id="pr-email"></label>
+      <label>Persona de contacto <input name="contacto" id="pr-contacto"></label>
+      <label>Web <input name="web" id="pr-web"></label>
+      <label class="ancho-total">Notas <textarea name="notas" id="pr-notas" rows="2"></textarea></label>
+      <div class="form-acciones ancho-total">
+        <button class="btn btn-primario"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+        <button type="button" class="btn" onclick="cerrarModal('modal-proveedor')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

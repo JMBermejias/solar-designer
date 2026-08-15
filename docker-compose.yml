@@ -1,0 +1,12 @@
+services:
+  solar:
+    build: .
+    container_name: solar-designer
+    ports:
+      - "5000:5000"
+    volumes:
+      - solar_data:/data
+    restart: unless-stopped
+
+volumes:
+  solar_data:

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block titulo %}{% if proy %}Editar{% else %}Nuevo{% endif %} proyecto{% endblock %}
+{% block cabecera %}<h1>{% if proy %}Editar proyecto{% else %}Nuevo proyecto{% endif %}</h1>{% endblock %}
+{% block contenido %}
+<form method="POST" enctype="multipart/form-data" id="form-proyecto" class="card form-proyecto">
+  <div class="pasos">
+    <div class="paso-ind" data-paso="0"><i class="fa-solid fa-circle-info"></i> Datos generales</div>
+    <div class="paso-ind" data-paso="1"><i class="fa-solid fa-bolt"></i> Consumo</div>
+    <div class="paso-ind" data-paso="2"><i class="fa-solid fa-map-location-dot"></i> Ubicación y cubierta</div>
+    <div class="paso-ind" data-paso="3"><i class="fa-solid fa-image"></i> Fotos y diseño</div>
+  </div>
+
+  <!-- PASO 1 -->
+  <div class="paso" id="paso-0">
+    <h3>Datos generales del proyecto</h3>
+    <div class="form-grid">
+      <label>Cliente
+        <select name="cliente_id">
+          <option value="">— Sin asignar —</option>
+          {% for c in clientes %}
+            <option value="{{ c.id }}" {{ 'selected' if proy and proy.cliente_id==c.id }}>{{ c.nombre }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Nombre del proyecto * <input name="nombre" required value="{{ proy.nombre if proy else '' }}" placeholder="Ej. Vivienda Los Olivos"></label>
+      <label>Dirección de la instalación <input name="direccion" value="{{ proy.direccion if proy else '' }}"></label>
+      <label>C.P. <input name="cp" value="{{ proy.cp if proy else '' }}"></label>
+      <label>Ciudad <input name="ciudad" value="{{ proy.ciudad if proy else '' }}"></label>
+      <label>Provincia <input name="provincia" value="{{ proy.provincia if proy else '' }}"></label>
+      <label>Potencia contratada (kW) <input type="number" step="0.1" min="0" name="potencia_contratada" value="{{ proy.potencia_contratada if proy else '' }}"></label>
+      <label>Tarifa eléctrica <select name="tarifa">
+        <option value="">—</option>
+        {% for t in ['2.0TD', '3.0TD', '6.1TD', 'Precio mercado'] %}
+          <option value="{{ t }}" {{ 'selected' if proy and proy.tarifa==t }}>{{ t }}</option>
+        {% endfor %}
+      </select></label>
+      <label>Estado del proyecto
+        <select name="estado">
+          {% for e in ['en diseño', 'en cotización', 'aprobado', 'en ejecución', 'completado'] %}
+            <option value="{{ e }}" {{ 'selected' if proy and proy.estado==e }}>{{ e }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="ancho-total">Notas <textarea name="notas" rows="2">{{ proy.notas if proy else '' }}</textarea></label>
+    </div>
+    <h4 style="margin-top:14px"><i class="fa-solid fa-chart-line"></i> Hipótesis del estudio de inversión</h4>
+    <div class="form-grid tres">
+      <label>Inversión inicial estimada (€)
+        <input type="number" step="any" min="0" name="inversion_estimada" placeholder="Vacío = partidas del proyecto">
+      </label>
+      <label>Subvención / ayuda (€) <input type="number" step="any" min="0" name="inversion_subvencion" value="{{ proy.inversion_subvencion if proy else 0 }}"></label>
+      <label>Vida útil (años) <input type="number" step="1" min="1" max="50" name="inversion_vida_util" value="{{ proy.inversion_vida_util if proy else 25 }}"></label>
+      <label>Tasa de descuento (%) <input type="number" step="0.1" min="0" name="inversion_tasa_descuento_pct" value="{{ proy.inversion_tasa_descuento_pct if proy else 3.5 }}"></label>
+      <label>Subida anual del precio de la energía (%) <input type="number" step="0.1" min="0" name="inversion_tasa_energia_pct" value="{{ proy.inversion_tasa_energia_pct if proy else 2.5 }}"></label>
+      <label>Mantenimiento anual (% de la inversión) <input type="number" step="0.1" min="0" name="inversion_costo_mantenimiento_pct" value="{{ proy.inversion_costo_mantenimiento_pct if proy else 0.5 }}"></label>
+    </div>
+    <p class="nota"><i class="fa-solid fa-circle-info"></i> Indicadores calculados: retorno simple, retorno descontado, VAN, TIR y ROI sobre la inversión neta (descontando subvención). El ahorro anual es consumo × 0,14 €/kWh y crece con la subida de la energía.</p>
+  </div>
+
+  <!-- PASO 2 -->
+  <div class="paso" id="paso-1" style="display:none">
+    <h3>Consumo eléctrico mensual (kWh)</h3>
+    <div class="ayuda-consulta">
+      <button type="button" class="btn" onclick="estimarConsumo()"><i class="fa-solid fa-wand-magic-sparkles"></i> Estimar consumo según plantilla</button>
+      <label class="campo-inline">Tipo
+        <select id="ct-tipo"><option value="vivienda">Vivienda</option><option value="nave">Nave / industria</option><option value="local">Local comercial</option></select>
+      </label>
+      <label class="campo-inline">Personas <input type="number" id="ct-personas" value="2" style="width:70px"></label>
+      <label class="campo-inline">Superficie m² <input type="number" id="ct-m2" value="80" style="width:80px"></label>
+      <button type="button" class="btn" onclick="rellenarPerfil('plano')">Perfil plano</button>
+      <button type="button" class="btn" onclick="rellenarPerfil('punta')">Con punta nocturna</button>
+    </div>
+    <div class="grid-meses">
+      {% for m in meses %}
+      <label>{{ m }}
+        <input type="number" step="any" min="0" name="consumo_{{ loop.index0 }}" value="{{ consumo[loop.index0] if consumo and consumo|length>loop.index0 and consumo[loop.index0] else '' }}" placeholder="0">
+      </label>
+      {% endfor %}
+    </div>
+    <p class="nota">También puedes indicar solo el total anual y repartirlo:</p>
+    <div class="form-grid tres">
+      <label>Consumo total anual (kWh)
+        <input type="number" step="any" min="0" name="consumo_total" id="consumo_total" placeholder="Ej. 5000">
+      </label>
+      <label class="campo-check"><input type="checkbox" name="distribuir_total" checked> Repartir uniformemente</label>
+      <label class="campo-check"><input type="checkbox" name="usar_bateria" id="usar_bateria" {{ 'checked' if proy and proy.autonomia_bateria_dias and proy.autonomia_bateria_dias>0 }} onchange="alternarBateria()"> Instalar batería de respaldo</label>
+    </div>
+    <div id="bloque-bateria" class="card-bateria" {% if not (proy and proy.autonomia_bateria_dias and proy.autonomia_bateria_dias>0) %}style="display:none"{% endif %}>
+      <h4><i class="fa-solid fa-car-battery"></i> Configuración del almacenamiento (LFP)</h4>
+      <div class="form-grid tres">
+        <label>Días de autonomía
+          <input type="number" step="0.5" min="0" name="autonomia_bateria_dias" id="autonomia_bateria_dias" value="{{ proy.autonomia_bateria_dias if proy and proy.autonomia_bateria_dias else 1 }}">
+        </label>
+        <label>Profundidad de descarga (DOD %)
+          <input type="number" step="1" min="10" max="100" name="bateria_dod_pct" value="{{ proy.bateria_dod_pct if proy else 80 }}">
+        </label>
+        <label>Tensión del sistema (V)
+          <select name="bateria_tension_v">
+            {% for v in [48, 96, 192, 384] %}
+              <option value="{{ v }}" {{ 'selected' if proy and proy.bateria_tension_v|int==v }}>{{ v }} V</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <p class="nota"><i class="fa-solid fa-circle-info"></i> Se dimensionará un banco de módulos de litio de 5,12 kWh para cubrir el consumo medio diario durante los días de autonomía indicados (rendimiento 90%, DOD configurable). La partida se añadirá automáticamente al presupuesto.</p>
+    </div>
+  </div>
+
+  <!-- PASO 3 -->
+  <div class="paso" id="paso-2" style="display:none">
+    <h3>Ubicación geográfica y cubierta</h3>
+    <div class="form-grid">
+      <label>Latitud (grados) <input type="number" step="0.0001" name="lat" id="f-lat" value="{{ proy.lat if proy else 37.0 }}"></label>
+      <label>Longitud (grados) <input type="number" step="0.0001" name="lon" id="f-lon" value="{{ proy.lon if proy else -3.6 }}"></label>
+      <label>Altitud (m s.n.m.) <input type="number" step="1" name="altitud_msnm" value="{{ proy.altitud_msnm if proy else 0 }}"></label>
+      <label>Tipo de cubierta
+        <select name="tipo_cubierta">
+          {% for t in ['Inclinada (teja)', 'Inclinada (fibrocemento)', 'Plana', 'Baja', 'Marquesina', 'Suelo', 'Fachada'] %}
+            <option value="{{ t }}" {{ 'selected' if proy and proy.tipo_cubierta==t }}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Superficie disponible (m²) <input type="number" step="0.1" min="0" name="superficie_m2" value="{{ proy.superficie_m2 if proy else '' }}"></label>
+      <label>Orientación azimut (°, 180 = Sur) <input type="number" step="1" name="orientacion_deg" value="{{ proy.orientacion_deg if proy else 180 }}"></label>
+      <label>Inclinación del plano (°) <input type="number" step="1" name="inclinacion_deg" value="{{ proy.inclinacion_deg if proy else 30 }}"></label>
+      <label>Sombreamientos
+        <select name="sombras">
+          {% for s in ['sin sombras', 'leves', 'moderadas', 'importantes'] %}
+            <option value="{{ s }}" {{ 'selected' if proy and proy.sombras==s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <p class="nota"><i class="fa-solid fa-globe"></i> Los datos de irradiación se obtienen de <b>PVGIS (JRC, Comisión Europea)</b> si hay conexión, o de un modelo estimado si no.</p>
+  </div>
+
+  <!-- PASO 4 -->
+  <div class="paso" id="paso-3" style="display:none">
+    <h3>Fotos, planos e imágenes para el diseño</h3>
+    <div class="grid-fotos">
+      {% for campo, etiqueta, placeholder in [('imagen_fachada','Foto de la fachada/cubierta','fachada'),('imagen_plano','Plano de planta','plano'),('imagen_planta','Foto de la cubierta','cubierta'),('imagen_extra1','Detalle / diseño propuesto','detalle'),('imagen_extra2','Imagen adicional','extra')] %}
+      <div class="caja-foto">
+        <label>{{ etiqueta }}
+          <input type="file" name="{{ campo }}" accept="image/*" onchange="previewImagen(this, 'pv-{{ placeholder }}')">
+        </label>
+        {% set img = proy[campo] if proy else None %}
+        <img id="pv-{{ placeholder }}" class="preview-img {% if not img %}oculto{% endif %}" src="{{ url_for('uploads', nombre=img) if img else '' }}" alt="">
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="form-acciones paso-nav">
+    <button type="button" class="btn" id="btn-atras" onclick="cambiarPaso(-1)" style="display:none"><i class="fa-solid fa-arrow-left"></i> Atrás</button>
+    <span class="flex-espacio"></span>
+    <button type="button" class="btn btn-primario" id="btn-siguiente" onclick="cambiarPaso(1)">Siguiente <i class="fa-solid fa-arrow-right"></i></button>
+    <button type="submit" class="btn btn-verde" id="btn-guardar" style="display:none"><i class="fa-solid fa-check"></i> Guardar proyecto</button>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+let pasoActual = 0;
+function alternarBateria() {
+  const act = document.getElementById("usar_bateria").checked;
+  document.getElementById("bloque-bateria").style.display = act ? "" : "none";
+  if (!act) document.getElementById("autonomia_bateria_dias").value = "0";
+  if (act && !document.getElementById("autonomia_bateria_dias").value) document.getElementById("autonomia_bateria_dias").value = "1";
+}
+function cambiarPaso(delta) {
+  const total = 4;
+  const nuevo = Math.min(total - 1, Math.max(0, pasoActual + delta));
+  if (nuevo === pasoActual) return;
+  document.getElementById("paso-" + pasoActual).style.display = "none";
+  document.querySelectorAll(".paso-ind").forEach(el => el.classList.remove("activo"));
+  pasoActual = nuevo;
+  document.getElementById("paso-" + pasoActual).style.display = "";
+  document.querySelector('.paso-ind[data-paso="' + pasoActual + '"]').classList.add("activo");
+  document.getElementById("btn-atras").style.display = pasoActual === 0 ? "none" : "";
+  document.getElementById("btn-siguiente").style.display = pasoActual === total - 1 ? "none" : "";
+  document.getElementById("btn-guardar").style.display = pasoActual === total - 1 ? "" : "none";
+}
+function rellenarPerfil(tipo) {
+  const base = tipo === 'punta' ? [180,160,150,140,140,145,170,190,170,160,170,190] : [150,140,145,140,150,165,190,195,175,160,150,145];
+  for (let i = 0; i < 12; i++) {
+    const el = document.querySelector('[name="consumo_' + i + '"]');
+    if (el) el.value = base[i];
+  }
+}
+function estimarConsumo() {
+  const tipo = document.getElementById("ct-tipo").value;
+  const personas = document.getElementById("ct-personas").value;
+  const m2 = document.getElementById("ct-m2").value;
+  fetch('/api/consumo?tipo=' + tipo + '&personas=' + personas + '&m2=' + m2)
+    .then(r => r.json()).then(d => {
+      document.getElementById("consumo_total").value = d.anual;
+      rellenarPerfil("plano");
+      alert("Consumo anual estimado: " + d.anual.toLocaleString("es-ES") + " kWh. Ajusta los meses si lo necesitas.");
+    });
+}
+document.querySelectorAll('.paso-ind').forEach(el => el.addEventListener('click', () => {
+  document.getElementById("paso-" + pasoActual).style.display = "none";
+  pasoActual = parseInt(el.dataset.paso);
+  document.getElementById("paso-" + pasoActual).style.display = "";
+  document.querySelectorAll(".paso-ind").forEach(x => x.classList.remove("activo"));
+  el.classList.add("activo");
+  document.getElementById("btn-atras").style.display = pasoActual === 0 ? "none" : "";
+  document.getElementById("btn-siguiente").style.display = pasoActual === 3 ? "none" : "";
+  document.getElementById("btn-guardar").style.display = pasoActual === 3 ? "" : "none";
+}));
+document.querySelector('.paso-ind[data-paso="0"]').classList.add("activo");
+</script>
+{% endblock %}

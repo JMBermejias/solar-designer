@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block titulo %}Productos{% endblock %}
+{% block cabecera %}<h1>Catálogo de productos fotovoltaicos</h1>{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <button class="btn btn-primario" onclick="abrirModal('modal-material', null)"><i class="fa-solid fa-box-open"></i> Nuevo producto</button>
+  <div class="filtros">
+    {% for key, nombre in cat_materiales.items() %}
+      <button class="chip {{ 'chip-activo' if request.args.get('cat', '')==key }}" onclick="filtrarCat('{{ key }}')">{{ nombre }}</button>
+    {% endfor %}
+    {% if request.args.get('cat') %}
+      <button class="chip" onclick="filtrarCat('')">✕ Quitar filtro</button>
+    {% endif %}
+  </div>
+</div>
+
+<section class="card">
+  {% if rows %}
+  <div class="grid-materiales">
+  {% for m in rows %}
+    <div class="ficha-material" data-cat="{{ m.categoria }}">
+      <div class="ficha-img">
+        {% if m.imagen %}
+          <img src="{{ url_for('uploads', nombre=m.imagen) }}" alt="{{ m.nombre }}" onclick="abrirLightbox(this.src)">
+        {% else %}
+          <div class="sin-img"><i class="fa-solid fa-box"></i></div>
+        {% endif %}
+        <span class="etiqueta cat-{{ m.categoria }}">{{ cat_materiales.get(m.categoria, m.categoria) }}</span>
+      </div>
+      <div class="ficha-cuerpo">
+        <h4>{{ m.nombre }}</h4>
+        <p class="marca">{{ m.marca or '' }}{% if m.modelo %} · {{ m.modelo }}{% endif %}</p>
+        <div class="precio">{{ "{:,.2f}".format(m.precio_unitario).replace(",", "X").replace(".", ",").replace("X", ".") }} €/{{ m.unidad }}</div>
+        <p class="detalles">
+          {% if m.potencia_w %}<span>{{ m.potencia_w }} Wp</span>{% endif %}
+          {% if m.eficiencia %}<span>{{ m.eficiencia }} %</span>{% endif %}
+          <span>Garantía {{ m.garantia_anos }} a</span>
+        </p>
+        {% if m.proveedor %}<p class="marca">← {{ m.proveedor }}</p>{% endif %}
+        <div class="ficha-acciones">
+          <button class="btn btn-icono" onclick='abrirModal("modal-material", {{ m | tojson }})' title="Editar"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn btn-icono" onclick="copiarMaterial({{ m.id }})" title="Duplicar"><i class="fa-solid fa-copy"></i></button>
+          <form method="POST" action="{{ url_for('material_eliminar', id=m.id) }}" onsubmit="return confirm('¿Eliminar este material?')">
+            <button class="btn btn-icono btn-peligro" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+  {% else %}
+  <p class="vacio">No hay productos en el catálogo.</p>
+  {% endif %}
+</section>
+
+<div id="modal-material" class="modal">
+  <div class="modal-caja modal-grande">
+    <div class="modal-cab"><h3 id="titulo-material">Nuevo producto</h3><button class="btn-icono" onclick="cerrarModal('modal-material')">&times;</button></div>
+    <form method="POST" action="{{ url_for('material_guardar') }}" enctype="multipart/form-data" class="form-grid">
+      <input type="hidden" name="id" id="mt-id">
+      <label>Categoría *
+        <select name="categoria" id="mt-categoria">
+          {% for key, nombre in cat_materiales.items() %}<option value="{{ key }}">{{ nombre }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Nombre * <input name="nombre" id="mt-nombre" required></label>
+      <label>Marca <input name="marca" id="mt-marca"></label>
+      <label>Modelo <input name="modelo" id="mt-modelo"></label>
+      <label>Referencia <input name="referencia" id="mt-referencia"></label>
+      <label>Precio unitario (€) <input type="number" step="0.01" min="0" name="precio_unitario" id="mt-precio"></label>
+      <label>IVA (%) <input type="number" step="0.1" min="0" name="iva" id="mt-iva" value="21"></label>
+      <label>Unidad <input name="unidad" id="mt-unidad" value="ud"></label>
+      <label>Stock <input type="number" step="any" min="0" name="stock" id="mt-stock" value="0"></label>
+      <label>Garantía (años) <input type="number" name="garantia_anos" id="mt-garantia" value="2"></label>
+      <label>Vida útil (años) <input type="number" name="vida_util_anos" id="mt-vida" value="25"></label>
+      <label>Potencia (Wp) <input type="number" step="any" name="potencia_w" id="mt-potencia"></label>
+      <label>Eficiencia (%) <input type="number" step="any" name="eficiencia" id="mt-eficiencia"></label>
+      <label>Proveedor
+        <select name="proveedor_id" id="mt-proveedor"><option value="">— Sin asignar —</option>
+          {% for p in provs %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Enlace ficha técnica <input name="ficha_url" id="mt-ficha"></label>
+      <label class="ancho-total">Descripción <textarea name="descripcion" id="mt-descripcion" rows="2"></textarea></label>
+      <label class="ancho-total">Parámetros técnicos (JSON) <input name="params" id="mt-params" placeholder='{"vmp":"41,5 V","voc":"49,8 V"}'></label>
+      <label class="ancho-total">Imagen del material
+        <input type="file" name="imagen" id="mt-imagen" accept="image/*" onchange="previewImagen(this, 'mt-preview')">
+        <img id="mt-preview" class="preview-img" style="display:none" alt="">
+      </label>
+      <div class="form-acciones ancho-total">
+        <button class="btn btn-primario"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+        <button type="button" class="btn" onclick="cerrarModal('modal-material')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function filtrarCat(cat) {
+  const url = new URL(window.location.href);
+  if (cat) url.searchParams.set("cat", cat); else url.searchParams.delete("cat");
+  window.location.href = url.toString();
+}
+function copiarMaterial(id) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = "/materiales/" + id + "/duplicar";
+  document.body.appendChild(form);
+  form.submit();
+}
+</script>
+{% endblock %}

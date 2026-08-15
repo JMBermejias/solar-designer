@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block titulo %}Recursos online{% endblock %}
+{% block cabecera %}<h1>Recursos y herramientas online</h1>{% endblock %}
+{% block contenido %}
+<section class="card">
+  <div class="card-titulo"><h3><i class="fa-solid fa-toolbox"></i> Herramientas integradas</h3></div>
+  <div class="grid-recursos">
+    <div class="recurso">
+      <h3><i class="fa-solid fa-cloud-sun"></i> Consulta PVGIS</h3>
+      <p>Obtén irradiación y producción reales para una ubicación usando la API del JRC (Comisión Europea).</p>
+      <a href="{{ url_for('recursos_pvgis') }}">Abrir herramienta →</a>
+    </div>
+    <div class="recurso">
+      <h3><i class="fa-solid fa-calculator"></i> Calculadora fotovoltaica</h3>
+      <p>Cálculo rápido de potencia, paneles, producción y ahorro sin crear un proyecto.</p>
+      <a href="{{ url_for('recursos_calculadora') }}">Abrir calculadora →</a>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-titulo"><h3><i class="fa-solid fa-globe"></i> Enlaces de referencia utilizados en el diseño</h3></div>
+  <div class="grid-recursos">
+    <div class="recurso">
+      <h3>PVsyst</h3>
+      <p>Software de referencia para diseño y simulación de sistemas fotovoltaicos. Útil para validar resultados.</p>
+      <a href="https://www.pvsyst.com/es/" target="_blank">pvsyst.com/es →</a>
+    </div>
+    <div class="recurso">
+      <h3>Mapa de capacidad de acceso (i-DE)</h3>
+      <p>Consulta la capacidad de acceso y conexión a la red de distribución por municipio.</p>
+      <a href="https://www.i-de.es/conexion-red-electrica/produccion-energia/mapa-capacidad-acceso" target="_blank">i-de.es →</a>
+    </div>
+    <div class="recurso">
+      <h3>PVGIS — Energy News</h3>
+      <p>Guía práctica de uso de la herramienta PVGIS para el cálculo de producción fotovoltaica.</p>
+      <a href="https://www.energynews.es/pvgis/" target="_blank">energynews.es/pvgis →</a>
+    </div>
+    <div class="recurso">
+      <h3>PVGIS JRC (herramienta oficial)</h3>
+      <p>Herramienta oficial de la Comisión Europea para datos de irradiación y producción.</p>
+      <a href="https://re.jrc.ec.europa.eu/pvg_tools/es/" target="_blank">re.jrc.ec.europa.eu/pvg_tools →</a>
+    </div>
+    <div class="recurso">
+      <h3>Cálculo de HPS (horas de sol pico)</h3>
+      <p>Referencia sobre el cálculo de horas de sol pico (HSP) para dimensionado fotovoltaico.</p>
+      <a href="https://fusionenergiasolar.es/contenido/14-calculo-hps" target="_blank">fusionenergiasolar.es →</a>
+    </div>
+    <div class="recurso">
+      <h3>Normativa RD 244/2019 (BOE)</h3>
+      <p>Condiciones administrativas, técnicas y económicas del autoconsumo de energía eléctrica.</p>
+      <a href="https://www.boe.es/buscar/act.php?id=BOE-A-2019-5089" target="_blank">boe.es →</a>
+    </div>
+  </div>
+  <p class="nota">El generador de documentos de la aplicación aplica estos datos y normativa automáticamente.</p>
+</section>
+{% endblock %}

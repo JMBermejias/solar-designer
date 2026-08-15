@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block titulo %}Proyectos{% endblock %}
+{% block cabecera %}<h1>Proyectos fotovoltaicos</h1>{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <a class="btn btn-primario" href="{{ url_for('proyecto_form') }}"><i class="fa-solid fa-plus"></i> Nuevo proyecto</a>
+</div>
+
+<section class="card">
+  {% if rows %}
+  <table class="tabla">
+    <thead><tr><th>Proyecto</th><th>Cliente</th><th>Población</th><th>Potencia est.</th><th>Partidas</th><th>Estado</th><th class="col-acciones">Acciones</th></tr></thead>
+    <tbody>
+    {% for p in rows %}
+      <tr>
+        <td><a href="{{ url_for('proyecto_detalle', pid=p.id) }}"><strong>{{ p.nombre }}</strong></a><br><small>Creado {{ p.created_at[:10] }}</small></td>
+        <td>{{ p.cliente or '—' }}</td>
+        <td>{{ p.ciudad or '—' }}</td>
+        <td>{{ "%.2f"|format(p.potencia_contratada or 0) }} kW</td>
+        <td>{{ p.nmats }}</td>
+        <td><span class="etiqueta {{ p.estado|replace(' ','-') }}">{{ p.estado }}</span></td>
+        <td class="col-acciones">
+          <a class="btn btn-icono" href="{{ url_for('proyecto_detalle', pid=p.id) }}" title="Ver"><i class="fa-solid fa-eye"></i></a>
+          <a class="btn btn-icono" href="{{ url_for('proyecto_form', pid=p.id) }}" title="Editar"><i class="fa-solid fa-pen"></i></a>
+          <form method="POST" action="{{ url_for('proyecto_eliminar', pid=p.id) }}" onsubmit="return confirm('¿Eliminar este proyecto y sus documentos?')">
+            <button class="btn btn-icono btn-peligro"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="vacio">No hay proyectos. <a href="{{ url_for('proyecto_form') }}">Crea tu primer proyecto</a>.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block titulo %}{{ pre.numero }}{% endblock %}
+{% block cabecera %}<h1>{{ pre.numero }} <span class="etiqueta {{ pre.estado }}">{{ pre.estado }}</span></h1>{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <a class="btn btn-primario" href="{{ url_for('presupuesto_pdf', pid=pre.id) }}"><i class="fa-solid fa-file-pdf"></i> Descargar PDF editable</a>
+  <a class="btn" href="{{ url_for('proyecto_detalle', pid=proy.id) }}"><i class="fa-solid fa-arrow-left"></i> Volver al proyecto</a>
+</div>
+
+<div class="dos-col">
+  <section class="card">
+    <div class="card-titulo"><h3><i class="fa-solid fa-user"></i> Cliente</h3></div>
+    {% if cliente %}
+    <table class="datos">
+      <tr><th>Nombre</th><td>{{ cliente.nombre }}</td></tr>
+      <tr><th>NIF</th><td>{{ cliente.nif }}</td></tr>
+      <tr><th>Dirección</th><td>{{ cliente.direccion }}, {{ cliente.cp }} {{ cliente.ciudad }}</td></tr>
+    </table>
+    {% else %}<p class="vacio">Sin cliente asignado.</p>{% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-titulo"><h3><i class="fa-solid fa-gear"></i> Parámetros del presupuesto</h3></div>
+    <form method="POST" action="{{ url_for('presupuesto_actualizar', pid=pre.id) }}" class="form-grid">
+      <label>Validez (días) <input type="number" name="validez_dias" value="{{ pre.validez_dias }}"></label>
+      <label>Descuento (%) <input type="number" step="0.1" name="descuento_global" value="{{ pre.descuento_global }}"></label>
+      <label>IVA (%) <input type="number" step="0.1" name="iva" value="{{ pre.iva }}"></label>
+      <label>Estado
+        <select name="estado">
+          {% for e in ['borrador','enviado','aprobado','rechazado'] %}
+            <option value="{{ e }}" {{ 'selected' if pre.estado==e }}>{{ e|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="ancho-total">Condiciones <textarea name="condiciones" rows="2">{{ pre.condiciones or '' }}</textarea></label>
+      <label class="ancho-total">Notas <textarea name="notas" rows="2">{{ pre.notas or '' }}</textarea></label>
+      <div class="form-acciones ancho-total"><button class="btn btn-primario"><i class="fa-solid fa-floppy-disk"></i> Actualizar</button></div>
+    </form>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-titulo"><h3><i class="fa-solid fa-list"></i> Líneas del presupuesto</h3></div>
+  <table class="tabla">
+    <thead><tr><th>Descripción</th><th>Cant.</th><th>Precio</th><th>IVA</th><th>Importe</th></tr></thead>
+    <tbody>
+    {% set ns = namespace(base=0.0) %}
+    {% for l in lineas %}
+      {% set importe = l.cantidad * l.precio_unitario %}
+      {% set ns.base = ns.base + importe %}
+      <tr>
+        <td>{{ l.descripcion }} {% if l.tipo %}<small>({{ l.tipo }})</small>{% endif %}</td>
+        <td>{{ "%.2f"|format(l.cantidad) }}</td>
+        <td>{{ ("%.2f"|format(l.precio_unitario)).replace('.',',') }} €</td>
+        <td>{{ "%.0f"|format(l.iva or pre.iva) }}%</td>
+        <td>{{ ("%.2f"|format(importe)).replace('.',',') }} €</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% set desc = ns.base * (pre.descuento_global or 0)/100 %}
+  {% set base = ns.base - desc %}
+  {% set iva = base * (pre.iva or 21)/100 %}
+  <div class="totales">
+    <div>Subtotal: {{ ("%.2f"|format(ns.base)).replace('.',',') }} €</div>
+    <div>Descuento: −{{ ("%.2f"|format(desc)).replace('.',',') }} €</div>
+    <div>Base imponible: {{ ("%.2f"|format(base)).replace('.',',') }} €</div>
+    <div>IVA ({{ "%.0f"|format(pre.iva or 21) }}%): {{ ("%.2f"|format(iva)).replace('.',',') }} €</div>
+    <div class="total-grande">TOTAL: {{ ("%.2f"|format(base + iva)).replace('.',',') }} €</div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-titulo"><h3><i class="fa-solid fa-plus"></i> Añadir línea</h3></div>
+  <form method="POST" action="{{ url_for('presupuesto_add_linea', pid=pre.id) }}" class="form-grid tres">
+    <label>Descripción * <input name="descripcion" required></label>
+    <label>Cantidad <input type="number" step="any" name="cantidad" value="1"></label>
+    <label>Precio unitario (€) <input type="number" step="0.01" name="precio_unitario" value="0"></label>
+    <label>IVA (%) <input type="number" step="0.1" name="iva" value="{{ pre.iva }}"></label>
+    <label>Tipo
+      <select name="tipo"><option value="material">Material</option><option value="partida">Partida/mano de obra</option></select>
+    </label>
+    <div class="form-acciones"><button class="btn btn-primario"><i class="fa-solid fa-plus"></i> Añadir</button></div>
+  </form>
+</section>
+{% endblock %}

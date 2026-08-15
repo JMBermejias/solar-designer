@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block titulo %}Nuevo contrato{% endblock %}
+{% block cabecera %}<h1>Nuevo contrato de mantenimiento</h1>{% endblock %}
+{% block contenido %}
+<section class="card card-ancha">
+  <div class="card-titulo"><h3><i class="fa-solid fa-file-signature"></i> Datos del contrato</h3></div>
+  <p class="nota">El contrato se redacta automáticamente con cláusulas legales y los datos del presupuesto contratado. Se genera en PDF editable.</p>
+  <form method="POST" class="form-grid">
+    <label>Proyecto *
+      <select name="proyecto_id" id="ct-proyecto" required onchange="autoCliente(this)">
+        <option value="">— Selecciona un proyecto —</option>
+        {% for p in proyectos %}
+          <option value="{{ p.id }}" data-cliente="{{ p.cliente_id }}">{{ p.nombre }} — {{ p.cliente or 'sin cliente' }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Cliente
+      <select name="cliente_id" id="ct-cliente">
+        <option value="">— Sin asignar —</option>
+        {% for c in clientes %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Presupuesto asociado
+      <select name="presupuesto_id">
+        <option value="">— Sin presupuesto —</option>
+        {% for p in presupuestos %}<option value="{{ p.id }}">{{ p.numero }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Importe anual (€) <input type="number" step="0.01" name="importe" placeholder="Ej. 450"></label>
+    <label>Periodicidad de facturación
+      <select name="periodicidad">
+        {% for pe in periodos %}<option value="{{ pe }}">{{ pe|capitalize }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Fecha del contrato <input type="date" name="fecha" value="{{ today }}"></label>
+    <label>Inicio de vigencia <input type="date" name="fecha_inicio"></label>
+    <label>Fin de vigencia <input type="date" name="fecha_fin"></label>
+    <label>Estado
+      <select name="estado"><option value="borrador">Borrador</option><option value="enviado">Enviado</option><option value="firmado">Firmado</option></select>
+    </label>
+    <label class="ancho-total">Condiciones particulares <textarea name="condiciones" rows="3" placeholder="Acuerdos adicionales…"></textarea></label>
+    <div class="form-acciones ancho-total">
+      <button class="btn btn-primario"><i class="fa-solid fa-wand-magic-sparkles"></i> Crear contrato</button>
+    </div>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+function autoCliente(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  if (opt && opt.dataset.cliente) {
+    document.getElementById("ct-cliente").value = opt.dataset.cliente;
+  }
+}
+</script>
+{% endblock %}

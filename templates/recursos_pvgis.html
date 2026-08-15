@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block titulo %}Consulta PVGIS{% endblock %}
+{% block cabecera %}<h1>Consulta de irradiación con PVGIS</h1>{% endblock %}
+{% block contenido %}
+<section class="card">
+  <div class="card-titulo"><h3><i class="fa-solid fa-magnifying-glass-location"></i> Datos para una ubicación</h3></div>
+  <form method="GET" class="form-grid tres">
+    <label>Latitud <input type="number" step="0.0001" name="lat" value="{{ lat or '' }}" placeholder="Ej. 37.1773" required></label>
+    <label>Longitud <input type="number" step="0.0001" name="lon" value="{{ lon or '' }}" placeholder="Ej. -3.5986" required></label>
+    <label>Inclinación (°) <input type="number" step="1" name="incl" value="{{ incl }}"></label>
+    <label>Orientación azimut (°) <input type="number" step="1" name="asp" value="{{ asp }}"></label>
+    <div class="form-acciones">
+      <button class="btn btn-primario"><i class="fa-solid fa-magnifying-glass"></i> Consultar</button>
+      <a class="btn" href="https://www.google.com/maps" target="_blank"><i class="fa-solid fa-map-location-dot"></i> Buscar coordenadas</a>
+    </div>
+  </form>
+</section>
+
+{% if lat is not none and lon is not none %}
+<section class="card">
+  <div class="card-titulo"><h3><i class="fa-solid fa-chart-line"></i> Resultados para {{ lat }}, {{ lon }} ({{ incl }}° / {{ asp }}°)</h3></div>
+  {% if datos %}
+    <p class="nota"><i class="fa-solid fa-circle-check"></i> Datos obtenidos de la API oficial de <b>PVGIS JRC</b> (https://re.jrc.ec.europa.eu/pvg_tools).</p>
+    <table class="tabla">
+      <thead><tr><th>Mes</th><th>Irrad. inclinada (kWh/m²)</th><th>Producción (kWh/kWp)</th></tr></thead>
+      <tbody>
+      {% for m in meses %}
+        <tr>
+          <td>{{ m }}</td>
+          <td>{{ "%.2f"|format(datos.irr_mensual_inc[loop.index0]) }}</td>
+          <td>{{ "%.1f"|format(datos.prod_mensual_kwh_kwp[loop.index0]) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><th>Total anual</th><th>{{ "%.1f"|format(datos.irr_mensual_inc|sum) }}</th><th>{{ "%.0f"|format(datos.prod_anual_kwh_kwp) }} kWh/kWp</th></tr>
+      </tfoot>
+    </table>
+    <div class="form-acciones" style="margin-top:12px">
+      <a class="btn btn-primario" href="{{ url_for('recursos_calculadora') }}?lat={{ lat }}&lon={{ lon }}&incl={{ incl }}&asp={{ asp }}&prod_kwp={{ datos.prod_anual_kwh_kwp }}"><i class="fa-solid fa-calculator"></i> Usar estos datos en la calculadora</a>
+    </div>
+  {% else %}
+    <p class="nota"><i class="fa-solid fa-triangle-exclamation"></i> No se pudo consultar PVGIS (¿sin conexión a internet?). Revisa las coordenadas o vuelve a intentarlo.</p>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "solar-designer"
+version = "1.1.0"
+description = "Aplicación web para planificación, cálculo y diseño de instalaciones fotovoltaicas, con presupuestos, memorias técnicas y mantenimiento en PDF editable."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+    "flask>=2.2",
+    "reportlab>=3.6",
+    "pywebview>=4.4",
+]
+
+[project.scripts]
+solar = "solar_cli:main"
+solar-init = "solar_cli:init_db"
+
+[tool.setuptools]
+py-modules = ["app", "database", "desktop", "solar_cli"]
+packages = ["solar"]
+
+[tool.setuptools.package-data]
+solar = ["*.py"]
+
+[tool.setuptools.data-files]
+"share/solar-designer/templates" = ["templates/*.html"]
+"share/solar-designer/static/css" = ["static/css/*.css"]
+"share/solar-designer/static/js" = ["static/js/*.js"]

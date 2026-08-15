@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block titulo %}Memorias técnicas{% endblock %}
+{% block cabecera %}<h1>Memorias técnicas</h1>{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <a class="btn btn-primario" href="{{ url_for('proyectos') }}"><i class="fa-solid fa-book-medical"></i> Crear memoria desde proyecto</a>
+</div>
+
+<section class="card">
+  {% if rows %}
+  <table class="tabla">
+    <thead><tr><th>Número</th><th>Proyecto</th><th>Fecha</th><th>Versión</th><th class="col-acciones">Acciones</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td><strong>{{ r.numero }}</strong></td>
+        <td>{{ r.proyecto }}</td>
+        <td>{{ r.fecha }}</td>
+        <td>v{{ r.version }}</td>
+        <td class="col-acciones">
+          <a class="btn btn-icono" href="{{ url_for('memoria_pdf', mid=r.id) }}" title="PDF editable"><i class="fa-solid fa-file-pdf"></i></a>
+          <form method="POST" action="{{ url_for('memoria_eliminar', mid=r.id) }}" onsubmit="return confirm('¿Eliminar la memoria?')">
+            <button class="btn btn-icono btn-peligro"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="vacio">No hay memorias técnicas. Accede a un proyecto y pulsa "Crear memoria".</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <div class="card-titulo"><h3><i class="fa-solid fa-book-medical"></i> Crear memoria directamente</h3></div>
+  <form method="POST" action="{{ url_for('memoria_nueva') }}" class="form-grid tres">
+    <label>Proyecto *
+      <select name="proyecto_id" required>
+        <option value="">— Selecciona —</option>
+        {% for p in proyectos %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Fecha <input type="date" name="fecha" value="{{ today }}"></label>
+    <label>Versión <input name="version" value="01"></label>
+    <div class="form-acciones ancho-total"><button class="btn btn-primario"><i class="fa-solid fa-wand-magic-sparkles"></i> Crear memoria</button></div>
+  </form>
+</section>
+{% endblock %}

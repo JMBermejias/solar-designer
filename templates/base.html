@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block titulo %}SolarDesigner{% endblock %} · SolarDesigner</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <i class="fa-solid fa-sun"></i>
+    <div>
+      <strong>SolarDesigner</strong>
+      <span>Ingeniería FV</span>
+    </div>
+  </div>
+  <nav class="nav">
+    <a href="{{ url_for('dashboard') }}" class="{{ 'activo' if request.endpoint=='dashboard' }}"><i class="fa-solid fa-gauge-high"></i> Panel</a>
+    <a href="{{ url_for('proyectos') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('proyecto') }}"><i class="fa-solid fa-solar-panel"></i> Proyectos</a>
+    <a href="{{ url_for('presupuestos') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('presupuesto') }}"><i class="fa-solid fa-file-invoice-dollar"></i> Presupuestos</a>
+    <a href="{{ url_for('memorias') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('memoria') }}"><i class="fa-solid fa-book"></i> Memorias</a>
+    <a href="{{ url_for('contratos') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('contrato') }}"><i class="fa-solid fa-file-signature"></i> Contratos</a>
+    <a href="{{ url_for('mantenimiento') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('mant') }}"><i class="fa-solid fa-screwdriver-wrench"></i> Mantenimiento</a>
+    <div class="nav-sep">DATOS</div>
+    <a href="{{ url_for('clientes') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('cliente') }}"><i class="fa-solid fa-users"></i> Clientes</a>
+    <a href="{{ url_for('proveedores') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('proveedor') }}"><i class="fa-solid fa-truck-fast"></i> Proveedores</a>
+    <a href="{{ url_for('productos') }}" class="{{ 'activo' if request.endpoint and (request.endpoint.startswith('material') or request.endpoint.startswith('producto')) }}"><i class="fa-solid fa-boxes-stacked"></i> Productos</a>
+    <a href="{{ url_for('herramientas') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('herramienta') }}"><i class="fa-solid fa-toolbox"></i> Herramientas</a>
+    <div class="nav-sep">EMPRESA</div>
+    <a href="{{ url_for('empresas') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('empresa') }}"><i class="fa-solid fa-building"></i> Empresas</a>
+    <div class="nav-sep">HERRAMIENTAS</div>
+    <a href="{{ url_for('recursos') }}" class="{{ 'activo' if request.endpoint=='recursos' }}"><i class="fa-solid fa-globe"></i> Recursos online</a>
+    <a href="{{ url_for('recursos_calculadora') }}" class="{{ 'activo' if request.endpoint=='recursos_calculadora' }}"><i class="fa-solid fa-calculator"></i> Calculadora FV</a>
+  </nav>
+  <div class="sidebar-foot">
+    <i class="fa-solid fa-circle-info"></i> v1.0 · {{
+      'Datos PVGIS online' if True else ''
+    }}
+  </div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-titulo">
+      {% block cabecera %}<h1>Panel de control</h1>{% endblock %}
+    </div>
+    <div class="topbar-empresa">
+      <i class="fa-solid fa-building"></i>
+      <div>
+        <strong>{{ empresa.nombre }}</strong>
+        <span>{{ empresa.cif }}</span>
+      </div>
+    </div>
+  </header>
+
+  {% with mensajes = get_flashed_messages(with_categories=true) %}
+    {% if mensajes %}
+      <div class="flashes">
+        {% for categoria, msg in mensajes %}
+          <div class="flash {{ categoria }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="contenido">
+    {% block contenido %}{% endblock %}
+  </div>
+</main>
+
+<div id="lightbox" class="lightbox" onclick="cerrarLightbox()">
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

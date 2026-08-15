@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block cabecera %}<h1>Panel de control</h1>{% endblock %}
+{% block contenido %}
+<div class="grid-stats">
+  <a class="stat" href="{{ url_for('proyectos') }}">
+    <i class="fa-solid fa-solar-panel"></i>
+    <div><strong>{{ nproy }}</strong><span>Proyectos</span></div>
+  </a>
+  <a class="stat" href="{{ url_for('presupuestos') }}">
+    <i class="fa-solid fa-file-invoice-dollar"></i>
+    <div><strong>{{ npres }}</strong><span>Presupuestos</span></div>
+  </a>
+  <a class="stat" href="{{ url_for('clientes') }}">
+    <i class="fa-solid fa-users"></i>
+    <div><strong>{{ ncli }}</strong><span>Clientes</span></div>
+  </a>
+  <a class="stat" href="{{ url_for('materiales') }}">
+    <i class="fa-solid fa-boxes-stacked"></i>
+    <div><strong>{{ nmat }}</strong><span>Productos</span></div>
+  </a>
+  <a class="stat" href="{{ url_for('contratos') }}">
+    <i class="fa-solid fa-file-signature"></i>
+    <div><strong>{{ ncont }}</strong><span>Contratos</span></div>
+  </a>
+  <a class="stat" href="{{ url_for('mantenimiento') }}">
+    <i class="fa-solid fa-screwdriver-wrench"></i>
+    <div><strong>{{ nmant }}</strong><span>Mant. pendientes</span></div>
+  </a>
+</div>
+
+<div class="dos-col">
+  <section class="card">
+    <div class="card-titulo">
+      <h3><i class="fa-solid fa-clock-rotate-left"></i> Últimos proyectos</h3>
+      <a class="btn btn-mini" href="{{ url_for('proyecto_form') }}"><i class="fa-solid fa-plus"></i> Nuevo</a>
+    </div>
+    {% if proyectos %}
+    <table class="tabla">
+      <thead><tr><th>Proyecto</th><th>Cliente</th><th>Ciudad</th><th>Estado</th></tr></thead>
+      <tbody>
+      {% for p in proyectos %}
+        <tr>
+          <td><a href="{{ url_for('proyecto_detalle', pid=p.id) }}">{{ p.nombre }}</a></td>
+          <td>{{ p.cliente or '—' }}</td>
+          <td>{{ p.ciudad or '—' }}</td>
+          <td><span class="etiqueta {{ p.estado|replace(' ','-') }}">{{ p.estado }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="vacio">Todavía no hay proyectos. <a href="{{ url_for('proyecto_form') }}">Crea el primero</a>.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-titulo"><h3><i class="fa-solid fa-bell"></i> Próximos mantenimientos</h3></div>
+    {% if pendientes %}
+    <table class="tabla">
+      <thead><tr><th>Proyecto</th><th>Periodo</th><th>Previsto</th></tr></thead>
+      <tbody>
+      {% for m in pendientes %}
+        <tr>
+          <td>{{ m.proyecto }}</td>
+          <td><span class="etiqueta periodo-{{ m.periodo }}">{{ m.periodo }}</span></td>
+          <td>{{ m.fecha_programada or '—' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="vacio">No hay mantenimientos pendientes.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-titulo"><h3><i class="fa-solid fa-bolt"></i> Flujo de trabajo recomendado</h3></div>
+  <ol class="flujo">
+    <li><b>1.</b> Registra el <a href="{{ url_for('cliente_guardar' if False else 'clientes') }}">cliente</a> y crea un <a href="{{ url_for('proyecto_form') }}">proyecto</a> con su consumo y ubicación.</li>
+    <li><b>2.</b> Añade <a href="{{ url_for('materiales') }}">materiales</a> reales desde tu base de datos y sube fotos de la cubierta/planos.</li>
+    <li><b>3.</b> Genera el <a href="{{ url_for('presupuesto_nuevo') }}">presupuesto</a> y la <a href="{{ url_for('memorias') }}">memoria técnica</a> en PDF editable con normativa.</li>
+    <li><b>4.</b> Redacta el <a href="{{ url_for('contrato_nuevo') }}">contrato de mantenimiento</a> y abre el <a href="{{ url_for('mantenimiento') }}">libro de mantenimiento</a>.</li>
+  </ol>
+</section>
+{% endblock %}

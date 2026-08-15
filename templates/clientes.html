@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block titulo %}Clientes{% endblock %}
+{% block cabecera %}<h1>Base de datos de clientes</h1>{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <button class="btn btn-primario" onclick="abrirModal('modal-cliente', null)"><i class="fa-solid fa-user-plus"></i> Nuevo cliente</button>
+</div>
+
+<section class="card">
+  {% if rows %}
+  <table class="tabla">
+    <thead><tr><th>Nombre</th><th>NIF</th><th>Población</th><th>Teléfono</th><th>Email</th><th>Contacto</th><th class="col-acciones">Acciones</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td><strong>{{ r.nombre }}</strong></td>
+        <td>{{ r.nif or '—' }}</td>
+        <td>{{ r.ciudad or '—' }}</td>
+        <td>{{ r.telefono or '—' }}</td>
+        <td>{{ r.email or '—' }}</td>
+        <td>{{ r.contacto or '—' }}</td>
+        <td class="col-acciones">
+          <button class="btn btn-icono" title="Editar" onclick='abrirModal("modal-cliente", {{ r | tojson }})'><i class="fa-solid fa-pen"></i></button>
+          <form method="POST" action="{{ url_for('cliente_eliminar', id=r.id) }}" onsubmit="return confirm('¿Eliminar este cliente?')">
+            <button class="btn btn-icono btn-peligro" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="vacio">No hay clientes registrados. Pulsa "Nuevo cliente" para empezar.</p>
+  {% endif %}
+</section>
+
+<div id="modal-cliente" class="modal">
+  <div class="modal-caja">
+    <div class="modal-cab"><h3 id="titulo-cliente">Nuevo cliente</h3><button class="btn-icono" onclick="cerrarModal('modal-cliente')">&times;</button></div>
+    <form method="POST" action="{{ url_for('cliente_guardar') }}" class="form-grid">
+      <input type="hidden" name="id" id="cl-id">
+      <label>Nombre * <input name="nombre" id="cl-nombre" required></label>
+      <label>NIF/CIF <input name="nif" id="cl-nif"></label>
+      <label>Dirección <input name="direccion" id="cl-direccion"></label>
+      <label>C.P. <input name="cp" id="cl-cp"></label>
+      <label>Ciudad <input name="ciudad" id="cl-ciudad"></label>
+      <label>Provincia <input name="provincia" id="cl-provincia"></label>
+      <label>Teléfono <input name="telefono" id="cl-telefono"></label>
+      <label>Email <input type="email" name="email" id="cl-email"></label>
+      <label>Persona de contacto <input name="contacto" id="cl-contacto"></label>
+      <label class="ancho-total">Notas <textarea name="notas" id="cl-notas" rows="2"></textarea></label>
+      <div class="form-acciones ancho-total">
+        <button class="btn btn-primario"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+        <button type="button" class="btn" onclick="cerrarModal('modal-cliente')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

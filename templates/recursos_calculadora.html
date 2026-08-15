@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block titulo %}Calculadora FV{% endblock %}
+{% block cabecera %}<h1>Calculadora fotovoltaica</h1>{% endblock %}
+{% block contenido %}
+<div class="dos-col">
+  <section class="card">
+    <div class="card-titulo"><h3><i class="fa-solid fa-sliders"></i> Datos de entrada</h3></div>
+    <div class="form-grid">
+      <label>Latitud <input type="number" step="0.0001" id="c-lat" value="{{ request.args.get('lat', 37.0) }}"></label>
+      <label>Longitud <input type="number" step="0.0001" id="c-lon" value="{{ request.args.get('lon', -3.6) }}"></label>
+      <label>Consumo anual (kWh) <input type="number" step="any" id="c-consumo" value="5000"></label>
+      <label>Potencia del módulo (Wp) <input type="number" step="any" id="c-panel" value="550"></label>
+      <label>Inclinación (°) <input type="number" step="1" id="c-incl" value="{{ request.args.get('incl', 30) }}"></label>
+      <label>Orientación azimut (°) <input type="number" step="1" id="c-asp" value="{{ request.args.get('asp', 180) }}"></label>
+      <label>Precio energía (€/kWh) <input type="number" step="0.001" id="c-precio" value="0.14"></label>
+      <label>Producción específica (kWh/kWp·año) <input type="number" step="any" id="c-prod" value="{{ request.args.get('prod_kwp', 1500) }}"></label>
+      <label>PR (performance ratio) <input type="number" step="0.01" id="c-pr" value="0.80"></label>
+    </div>
+    <div class="form-acciones" style="margin-top:12px">
+      <button class="btn btn-primario" onclick="calcular()"><i class="fa-solid fa-calculator"></i> Calcular</button>
+      <label class="campo-check"><input type="checkbox" id="c-bateria" checked> Con batería (autonomía 1 día)</label>
+    </div>
+    <p class="nota">La producción específica puede obtenerse de la <a href="{{ url_for('recursos_pvgis') }}">consulta PVGIS</a>.</p>
+  </section>
+
+  <section class="card">
+    <div class="card-titulo"><h3><i class="fa-solid fa-chart-column"></i> Resultados</h3></div>
+    <table class="datos" id="c-resultados">
+      <tr><th>Potencia pico necesaria</th><td id="r-pot">—</td></tr>
+      <tr><th>Nº de módulos</th><td id="r-paneles">—</td></tr>
+      <tr><th>Superficie de captación</th><td id="r-superficie">—</td></tr>
+      <tr><th>Inversor recomendado</th><td id="r-inversor">—</td></tr>
+      <tr><th>Producción anual estimada</th><td id="r-produccion">—</td></tr>
+      <tr><th>Cobertura del consumo</th><td id="r-cobertura">—</td></tr>
+      <tr><th>Ahorro anual estimado</th><td id="r-ahorro">—</td></tr>
+      <tr><th>CO₂ evitado</th><td id="r-co2">—</td></tr>
+      <tr><th>Capacidad de batería</th><td id="r-bateria">—</td></tr>
+    </table>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function fNum(n) {
+  return n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
+}
+function calcular() {
+  const lat = parseFloat(document.getElementById("c-lat").value) || 37;
+  const lon = parseFloat(document.getElementById("c-lon").value) || -3.6;
+  const consumo = parseFloat(document.getElementById("c-consumo").value) || 0;
+  const panel = parseFloat(document.getElementById("c-panel").value) || 550;
+  const incl = parseFloat(document.getElementById("c-incl").value) || 30;
+  const asp = parseFloat(document.getElementById("c-asp").value) || 180;
+  const precio = parseFloat(document.getElementById("c-precio").value) || 0.14;
+  const prod = parseFloat(document.getElementById("c-prod").value) || 1500;
+  const pr = parseFloat(document.getElementById("c-pr").value) || 0.8;
+  const bateria = document.getElementById("c-bateria").checked;
+
+  const potencia = consumo / (prod * pr);
+  const paneles = Math.max(1, Math.ceil(potencia * 1000 / panel));
+  const superficie = paneles * 1.95;
+  const inversor = Math.ceil(potencia / 1.15 * 2) / 2;
+  const produccion = potencia * prod * pr;
+  const cobertura = consumo > 0 ? produccion / consumo * 100 : 0;
+  const ahorro = produccion * precio;
+  const co2 = produccion * 0.35;
+  const capBateria = bateria ? (consumo / 365) / 0.9 : 0;
+
+  document.getElementById("r-pot").textContent = fNum(potencia) + " kWp";
+  document.getElementById("r-paneles").textContent = paneles + " × " + panel + " Wp";
+  document.getElementById("r-superficie").textContent = fNum(superficie) + " m²";
+  document.getElementById("r-inversor").textContent = fNum(inversor) + " kW";
+  document.getElementById("r-produccion").textContent = fNum(produccion) + " kWh/año";
+  document.getElementById("r-cobertura").textContent = fNum(cobertura) + " %";
+  document.getElementById("r-ahorro").textContent = fNum(ahorro) + " €/año";
+  document.getElementById("r-co2").textContent = fNum(co2) + " kg/año";
+  document.getElementById("r-bateria").textContent = fNum(capBateria) + " kWh";
+}
+calcular();
+</script>
+{% endblock %}

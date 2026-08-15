@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block titulo %}Mantenimiento{% endblock %}
+{% block cabecera %}<h1>Libro de mantenimiento</h1>{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <button class="btn btn-primario" onclick="abrirModal('modal-mant', null)"><i class="fa-solid fa-plus"></i> Nuevo registro</button>
+</div>
+
+<section class="card">
+  {% if rows %}
+  <table class="tabla">
+    <thead><tr><th>Proyecto</th><th>Periodo</th><th>Programada</th><th>Realizada</th><th>Técnico</th><th>Estado</th><th class="col-acciones">Acciones</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td>{{ r.proyecto }}<br><small>{{ r.cliente or '' }}</small></td>
+        <td><span class="etiqueta periodo-{{ r.periodo }}">{{ r.periodo }}</span></td>
+        <td>{{ r.fecha_programada or '—' }}</td>
+        <td>{{ r.fecha_realizado or '—' }}</td>
+        <td>{{ r.tecnico or '—' }}</td>
+        <td><span class="etiqueta {{ r.estado }}">{{ r.estado }}</span></td>
+        <td class="col-acciones">
+          <button class="btn btn-icono" onclick='abrirModal("modal-mant", {{ r | tojson }}, {{ TAREAS_MANT.get(r.periodo, []) | tojson }})' title="Editar"><i class="fa-solid fa-pen"></i></button>
+          <a class="btn btn-icono" href="{{ url_for('mant_pdf', mid=r.id) }}" title="Informe PDF"><i class="fa-solid fa-file-pdf"></i></a>
+          <form method="POST" action="{{ url_for('mant_eliminar', mid=r.id) }}" onsubmit="return confirm('¿Eliminar el registro?')">
+            <button class="btn btn-icono btn-peligro"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="vacio">No hay registros de mantenimiento.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <div class="card-titulo"><h3><i class="fa-solid fa-book-open"></i> Libro de mantenimiento en PDF</h3></div>
+  <p class="nota">Genera el libro completo de un proyecto con todos sus registros y el programa preventivo trimestral, semestral y anual, en PDF editable.</p>
+  <form method="POST" action="{{ url_for('mant_libro', pid=0) }}" id="form-libro" class="form-grid tres">
+    <label>Proyecto
+      <select name="proyecto_id" id="libro-proyecto" required>
+        <option value="">— Selecciona —</option>
+        {% for p in proyectos %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
+      </select>
+    </label>
+    <div class="form-acciones">
+      <button class="btn btn-primario"><i class="fa-solid fa-book-open"></i> Generar libro PDF</button>
+    </div>
+  </form>
+</section>
+
+<div id="modal-mant" class="modal">
+  <div class="modal-caja modal-grande">
+    <div class="modal-cab"><h3 id="titulo-mant">Nuevo registro de mantenimiento</h3><button class="btn-icono" onclick="cerrarModal('modal-mant')">&times;</button></div>
+    <form method="POST" action="{{ url_for('mant_guardar') }}" class="form-grid">
+      <input type="hidden" name="id" id="ma-id">
+      <label>Proyecto *
+        <select name="proyecto_id" id="ma-proyecto" required>
+          {% for p in proyectos %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Periodo
+        <select name="periodo" id="ma-periodo" onchange="cargarTareas()">
+          {% for pe in periodos %}<option value="{{ pe }}">{{ pe|capitalize }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Fecha programada <input type="date" name="fecha_programada" id="ma-fp"></label>
+      <label>Fecha realizada <input type="date" name="fecha_realizado" id="ma-fr"></label>
+      <label>Técnico <input name="tecnico" id="ma-tecnico" placeholder="Nombre del técnico"></label>
+      <label>Estado
+        <select name="estado" id="ma-estado">
+          <option value="pendiente">Pendiente</option>
+          <option value="programado">Programado</option>
+          <option value="realizado">Realizado</option>
+          <option value="incidencia">Con incidencia</option>
+        </select>
+      </label>
+      <label class="ancho-total">Tareas realizadas
+        <div id="ma-tareas" class="lista-tareas"></div>
+        <input type="hidden" name="tareas" id="ma-tareas-json" value="[]">
+      </label>
+      <label class="ancho-total">Observaciones <textarea name="observaciones" id="ma-observaciones" rows="2"></textarea></label>
+      <div class="form-acciones ancho-total">
+        <button class="btn btn-primario"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+        <button type="button" class="btn" onclick="cerrarModal('modal-mant')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const PRE_TAREAS = {
+  trimestral: {{ TAREAS_MANT['trimestral'] | tojson }},
+  semestral: {{ TAREAS_MANT['semestral'] | tojson }},
+  anual: {{ TAREAS_MANT['anual'] | tojson }}
+};
+let tareasActuales = [];
+function cargarTareas() {
+  if (tareasActuales.length === 0) {
+    tareasActuales = PRE_TAREAS[document.getElementById("ma-periodo").value].slice();
+  }
+  renderTareas();
+}
+function renderTareas() {
+  const cont = document.getElementById("ma-tareas");
+  cont.innerHTML = "";
+  tareasActuales.forEach((t, i) => {
+    const lab = document.createElement("label");
+    lab.className = "tarea-check";
+    const chk = document.createElement("input");
+    chk.type = "checkbox"; chk.checked = true; chk.value = t;
+    chk.onchange = guardarTareas;
+    const span = document.createElement("span");
+    span.textContent = t;
+    const quitar = document.createElement("button");
+    quitar.type = "button"; quitar.className = "btn-icono btn-peligro"; quitar.textContent = "×";
+    quitar.onclick = () => { tareasActuales.splice(i, 1); renderTareas(); };
+    lab.appendChild(chk); lab.appendChild(span); lab.appendChild(quitar);
+    cont.appendChild(lab);
+  });
+  const input = document.createElement("input");
+  input.type = "text"; input.placeholder = "+ Añadir tarea…";
+  input.className = "input-tarea-nueva";
+  input.onkeydown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (input.value.trim()) {
+        tareasActuales.push(input.value.trim());
+        renderTareas();
+      }
+    }
+  };
+  cont.appendChild(input);
+  guardarTareas();
+}
+function guardarTareas() {
+  const marcadas = Array.from(document.querySelectorAll("#ma-tareas input[name='tarea']:checked")).map(i => i.value);
+  document.getElementById("ma-tareas-json").value = JSON.stringify(marcadas);
+}
+</script>
+{% endblock %}

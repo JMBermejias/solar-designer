@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block titulo %}Empresas{% endblock %}
+{% block cabecera %}<h1>Empresas</h1>{% endblock %}
+{% block contenido %}
+<div class="barra-acciones">
+  <button class="btn btn-primario" onclick="abrirModal('modal-empresa', null)"><i class="fa-solid fa-building"></i> Nueva empresa</button>
+  <p class="nota-barra">La empresa <strong>activa</strong> es la que aparece en los documentos PDF.</p>
+</div>
+
+<section class="card">
+  {% if rows %}
+  <table class="tabla">
+    <thead><tr><th>Nombre</th><th>CIF/NIF</th><th>Dirección</th><th>Ciudad</th><th>Teléfono</th><th>Email</th><th>Activa</th><th class="col-acciones">Acciones</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td><strong>{{ r.nombre }}</strong></td>
+        <td>{{ r.cif or '—' }}</td>
+        <td>{{ r.direccion or '—' }}</td>
+        <td>{{ r.ciudad or '—' }}</td>
+        <td>{{ r.telefono or '—' }}</td>
+        <td>{{ r.email or '—' }}</td>
+        <td>
+          {% if r.activa %}
+            <span class="etiqueta cat-modulo">Activa</span>
+          {% else %}
+            <form method="POST" action="{{ url_for('empresa_activar', id=r.id) }}">
+              <button class="btn btn-peque" title="Establecer como activa"><i class="fa-solid fa-star"></i> Activar</button>
+            </form>
+          {% endif %}
+        </td>
+        <td class="col-acciones">
+          <button class="btn btn-icono" onclick='abrirModal("modal-empresa", {{ r | tojson }})' title="Editar"><i class="fa-solid fa-pen"></i></button>
+          <form method="POST" action="{{ url_for('empresa_eliminar', id=r.id) }}" onsubmit="return confirm('¿Eliminar esta empresa?')">
+            <button class="btn btn-icono btn-peligro" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="vacio">No hay empresas registradas.</p>
+  {% endif %}
+</section>
+
+<div id="modal-empresa" class="modal">
+  <div class="modal-caja">
+    <div class="modal-cab"><h3 id="titulo-empresa">Nueva empresa</h3><button class="btn-icono" onclick="cerrarModal('modal-empresa')">&times;</button></div>
+    <form method="POST" action="{{ url_for('empresa_guardar') }}" class="form-grid">
+      <input type="hidden" name="id" id="em-id">
+      <label class="ancho-total">Nombre * <input name="nombre" id="em-nombre" required></label>
+      <label>CIF/NIF <input name="cif" id="em-cif"></label>
+      <label>Web <input name="web" id="em-web"></label>
+      <label class="ancho-total">Dirección <input name="direccion" id="em-direccion"></label>
+      <label>Ciudad <input name="ciudad" id="em-ciudad"></label>
+      <label>Teléfono <input name="telefono" id="em-telefono"></label>
+      <label class="ancho-total">Email <input type="email" name="email" id="em-email"></label>
+      <div class="form-acciones ancho-total">
+        <button class="btn btn-primario"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+        <button type="button" class="btn" onclick="cerrarModal('modal-empresa')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

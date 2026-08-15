@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Solar Designer
+Name[es]=Solar Designer
+GenericName=Solar PV designer
+GenericName[es]=Diseño fotovoltaico
+Comment=Planificación y diseño de instalaciones fotovoltaicas
+Comment[es]=Planificación y diseño de instalaciones fotovoltaicas
+Exec=solar
+Icon=solar-designer
+Terminal=false
+Categories=Utility;Office;Engineering;Graphics;
+StartupNotify=true
