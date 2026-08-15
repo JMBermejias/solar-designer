@@ -209,10 +209,10 @@ def _migrar_empresas(conn):
         except Exception:
             datos = None
     if not datos:
-        datos = {"nombre": "SolarTech Ingeniería S.L.", "cif": "B12345678",
+        datos = {"nombre": "Enersolred", "cif": "B12345678",
                  "direccion": "C/ Solar 12, 28001 Madrid", "ciudad": "Madrid",
-                 "telefono": "900 123 456", "email": "info@solartech.es",
-                 "web": "www.solartech.es"}
+                 "telefono": "900 123 456", "email": "info@enersolred.blogspot.com",
+                 "web": "https://enersolred.blogspot.com/"}
     conn.execute(
         "INSERT INTO empresas (nombre, cif, direccion, ciudad, telefono, email, web, activa) "
         "VALUES (?,?,?,?,?,?,?,1)",
@@ -239,12 +239,12 @@ def seed(conn):
             "INSERT INTO config (clave, valor) VALUES (?, ?)",
             ("empresa",
              json.dumps({
-                 "nombre": "SolarTech Ingeniería S.L.",
+                 "nombre": "Enersolred",
                  "cif": "B12345678",
                  "direccion": "C/ Solar 12, 28001 Madrid",
                  "telefono": "900 123 456",
-                 "email": "info@solartech.es",
-                 "web": "www.solartech.es",
+                 "email": "info@enersolred.blogspot.com",
+                 "web": "https://enersolred.blogspot.com/",
              })),
         )
     if cur.execute("SELECT COUNT(*) FROM proveedores").fetchone()[0] == 0:

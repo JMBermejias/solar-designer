@@ -120,3 +120,11 @@ docker-compose.yml  Orquestación Docker con volumen de datos
 - Presupuestos con partidas y baterías dimensionadas automáticamente.
 - Memoria técnica, contrato y plan de mantenimiento en PDF editable.
 - Simulador financiero (VAN, TIR, ROI) y dimensionado de baterías.
+
+## Licencia
+
+SolarDesigner es software libre: puedes redistribuirlo y/o modificarlo bajo
+los términos de la GNU General Public License versión 3 (o cualquier versión
+posterior). Ver el archivo `LICENSE` para los términos completos.
+
+Desarrollado por **Enersolred** · https://enersolred.blogspot.com/

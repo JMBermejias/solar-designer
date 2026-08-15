@@ -2,8 +2,8 @@
 """Genera el paquete .deb de Solar Designer sin depender de dpkg-deb.
 
 Uso:
-    python3 build_deb.py            -> dist/solar-designer_1.2.1_all.deb
-    python3 build_deb.py --version 1.2.1
+    python3 build_deb.py            -> dist/solar-designer_1.3.0_all.deb
+    python3 build_deb.py --version 1.3.0
 """
 
 import argparse
@@ -14,7 +14,8 @@ import tarfile
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PACKAGE = "solar-designer"
-MAINTAINER = "SolarTech Ingenieria S.L. <info@solartech.es>"
+MAINTAINER = "Enersolred"
+HOMEPAGE = "https://enersolred.blogspot.com/"
 
 # Dependencias mínimas del sistema: python, venv/pip, GTK3, sus bindings y
 # WebKit2GTK para la ventana nativa. El nombre del paquete webkit cambia
@@ -33,13 +34,13 @@ Installed-Size: {size}
 Depends: {depends}
 Section: web
 Priority: optional
-Homepage: https://www.solartech.es
+Homepage: {homepage}
 Description: Diseno fotovoltaico en una ventana propia
  Genera proyectos, presupuestos, memorias tecnicas, contratos y planes
  de mantenimiento de instalaciones fotovoltaicas, con documentos PDF
  editables (AcroForm) segun normativa espanola. Aplicacion de escritorio
  con interfaz nativa (GTK/WebKit); tambien sirve en el navegador con
- 'solar --web'.
+ 'solar --web'. Licencia GPLv3. Desarrollada por Enersolred.
 """
 POSTINST = """#!/bin/sh
 set -e
@@ -146,6 +147,8 @@ def build_tree():
         os.path.join(ROOT, "assets", "solar-designer.svg")
     files["usr/share/applications/solar-designer.desktop"] = \
         os.path.join(ROOT, "assets", "solar-designer.desktop")
+    # licencia (GPLv3) en la documentación del paquete
+    files["usr/share/doc/solar-designer/copyright"] = os.path.join(ROOT, "LICENSE")
     return files
 
 
@@ -213,6 +216,7 @@ def build_deb(version):
     total = sum(os.path.getsize(s) for s in files.values())
     control_content = CONTROL.format(pkg=PACKAGE, version=version,
                                      maintainer=MAINTAINER,
+                                     homepage=HOMEPAGE,
                                      size=max(1, total // 1024),
                                      depends=DEPENDS)
     with open(os.path.join(control_dir, "control"), "w") as f:
@@ -266,6 +270,6 @@ def build_deb(version):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Genera el .deb de Solar Designer")
-    parser.add_argument("--version", default="1.2.1")
+    parser.add_argument("--version", default="1.3.0")
     args = parser.parse_args()
     build_deb(args.version)

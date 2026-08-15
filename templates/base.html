@@ -35,9 +35,7 @@
     <a href="{{ url_for('recursos_calculadora') }}" class="{{ 'activo' if request.endpoint=='recursos_calculadora' }}"><i class="fa-solid fa-calculator"></i> Calculadora FV</a>
   </nav>
   <div class="sidebar-foot">
-    <i class="fa-solid fa-circle-info"></i> v1.0 · {{
-      'Datos PVGIS online' if True else ''
-    }}
+    <i class="fa-solid fa-circle-info"></i> v1.3.0 · Enersolred
   </div>
 </aside>
 
@@ -68,6 +66,11 @@
   <div class="contenido">
     {% block contenido %}{% endblock %}
   </div>
+
+  <footer class="pie">
+    <i class="fa-solid fa-sun"></i> SolarDesigner · © 2026 Enersolred · GPL-3.0 ·
+    <a href="https://enersolred.blogspot.com/" target="_blank" rel="noopener">enersolred.blogspot.com</a>
+  </footer>
 </main>
 
 <div id="lightbox" class="lightbox" onclick="cerrarLightbox()">
