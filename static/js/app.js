@@ -5,10 +5,20 @@ const CAMPO_MAP = {
     eficiencia: "eficiencia", proveedor_id: "proveedor", ficha_url: "ficha",
     descripcion: "descripcion", params: "params",
   },
+  ma: {
+    proyecto_id: "proyecto", fecha_programada: "fp", fecha_realizado: "fr",
+  },
+};
+
+// Prefijo corto de los ids de cada modal (modal-cliente -> cl-...)
+const PREFIX_MODAL = {
+  cliente: "cl", proveedor: "pr", empresa: "em", material: "mt",
+  herramienta: "he", mant: "ma",
 };
 
 function prefijoDeModal(idModal) {
-  return idModal.replace("modal-", "");
+  const nombre = idModal.replace("modal-", "");
+  return PREFIX_MODAL[nombre] || nombre;
 }
 
 function abrirModal(idModal, datos) {

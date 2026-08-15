@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "solar-designer"
-version = "1.1.0"
+version = "1.2.1"
 description = "Aplicación web para planificación, cálculo y diseño de instalaciones fotovoltaicas, con presupuestos, memorias técnicas y mantenimiento en PDF editable."
 readme = "README.md"
 requires-python = ">=3.9"
