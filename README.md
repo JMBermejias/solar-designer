@@ -125,6 +125,6 @@ docker-compose.yml  Orquestación Docker con volumen de datos
 
 SolarDesigner es software libre: puedes redistribuirlo y/o modificarlo bajo
 los términos de la GNU General Public License versión 3 (o cualquier versión
-posterior). Ver el archivo `LICENSE` para los términos completos.
+posterior). Ver el archivo [`LICENSE`](LICENSE) para los términos completos.
 
 Desarrollado por **Enersolred** · https://enersolred.blogspot.com/

@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 Enersolred
+#
+# Solar Designer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 """Genera el paquete .deb de Solar Designer sin depender de dpkg-deb.
 
 Uso:
@@ -148,8 +163,45 @@ def build_tree():
     files["usr/share/applications/solar-designer.desktop"] = \
         os.path.join(ROOT, "assets", "solar-designer.desktop")
     # licencia (GPLv3) en la documentación del paquete
-    files["usr/share/doc/solar-designer/copyright"] = os.path.join(ROOT, "LICENSE")
+    files["usr/share/doc/solar-designer/copyright"] = os.path.join(lib, "copyright")
+    with open(os.path.join(lib, "copyright"), "w") as fo:
+        fo.write(copyright_text())
+    files["usr/share/doc/solar-designer/LICENSE"] = os.path.join(ROOT, "LICENSE")
     return files
+
+
+def copyright_text():
+    """Archivo copyright en formato DEP-5 (Debian) con el texto completo GPLv3."""
+    with open(os.path.join(ROOT, "LICENSE")) as f:
+        gpl = f.read().strip()
+    indent = lambda text: "\n".join(" " + line if line else "" for line in text.splitlines())
+    return (
+        "Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/\n"
+        "Upstream-Name: solar-designer\n"
+        "Source: {homepage}\n"
+        "\n"
+        "Files: *\n"
+        "Copyright: 2026 Enersolred\n"
+        "License: GPL-3.0-or-later\n"
+        " This program is free software: you can redistribute it and/or modify\n"
+        " it under the terms of the GNU General Public License as published by\n"
+        " the Free Software Foundation, either version 3 of the License, or\n"
+        " (at your option) any later version.\n"
+        " .\n"
+        " This program is distributed in the hope that it will be useful,\n"
+        " but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+        " MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+        " GNU General Public License for more details.\n"
+        " .\n"
+        " You should have received a copy of the GNU General Public License\n"
+        " along with this program.  If not, see <https://www.gnu.org/licenses/>.\n"
+        " .\n"
+        " On Debian systems, the complete text of the GNU General Public\n"
+        " License can be found in the file '/usr/share/common-licenses/GPL-3'.\n"
+        " .\n"
+        "{indented}\n"
+    ).format(homepage=HOMEPAGE, indented=indent(gpl))
+
 
 
 def stage_files(files):
