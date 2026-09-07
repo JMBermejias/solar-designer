@@ -89,7 +89,7 @@ def abrir_ventana(host="127.0.0.1", port=5000, debug=False):
 
     try:
         webview.create_window(TITULO, url, width=ANCHO, height=ALTO,
-                              min_size=(900, 600), maximized=True)
+                              min_size=(900, 600))
         webview.start()
     except Exception as e:
         print("No se pudo abrir la ventana nativa: %s" % e)

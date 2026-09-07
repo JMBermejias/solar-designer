@@ -79,19 +79,49 @@ solar-designer` si se ejecuta sin privilegios de escritura).
 
 ## Distribución en GitHub Releases
 
-El repositorio incluye un workflow de GitHub Actions
-(`.github/workflows/build-deb.yml`) que construye el `.deb` y lo publica
-automáticamente como release cuando creas una etiqueta:
+El repositorio incluye el workflow de GitHub Actions
+`.github/workflows/build.yml`, que compila **automáticamente en cada push**
+a `main` (o cuando creas una etiqueta `v*`) los ejecutables de Windows y
+Linux, y los publica como una release:
+
+- **Windows (runner windows-latest):** ejecutable standalone
+  `SolarDesigner.exe` (PyInstaller) e instalador autoinstalable
+  `solar-designer-<versión>-windows-setup.exe` (Inno Setup).
+- **Linux (runner ubuntu-latest):** paquete `.deb` universal
+  `solar-designer_<versión>_all.deb`.
+
+Cada cambio que se sube a `main` genera una release nueva, sin necesidad
+de tocar etiquetas. También puedes dispararlo manualmente desde la pestaña
+*Actions* (`Build & Release` → *Run workflow*).
+
+La versión se lee de `pyproject.toml`. Para asignar una versión, crea una
+etiqueta y sube los ejecutables con el número correspondiente:
 
 ```sh
-git tag v1.2.0
-git push origin v1.2.0
+git tag v1.3.1
+git push origin v1.3.1
 ```
 
-Tras unos minutos, el release `v1.2.0` aparecerá con el archivo
-`solar-designer_1.2.0_all.deb` adjunto, listo para que cualquiera lo
-instale con `sudo apt install ./solar-designer_1.2.0_all.deb`.
-También puedes dispararlo manualmente desde la pestaña *Actions*.
+Tras unos minutos aparecerá el release con los tres artefactos. Para
+instalar en Linux:
+
+```sh
+sudo apt install ./solar-designer_1.3.1_all.deb
+```
+
+### Generar el instalador de Windows localmente
+
+Si prefieres compilar en tu propia máquina con Windows:
+
+```sh
+pip install pyinstaller flask reportlab pywebview
+python build_windows.py --version 1.3.1
+```
+
+Requiere [Inno Setup 6](https://jrsoftware.org/isdl.php) para generar el
+instalador autoinstalable. Resultado:
+- `dist/SolarDesigner.exe` - ejecutable portable
+- `installer_output/solar-designer-1.3.1-windows-setup.exe` - instalador
 
 ## Estructura
 

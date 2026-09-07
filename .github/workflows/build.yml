@@ -1,0 +1,134 @@
+name: Build & Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller flask reportlab pywebview
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(python -c "import re; print(re.search(r'^version = \"([^\"]+)\"', open('pyproject.toml').read(), re.M).group(1))")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup -y --no-progress
+
+      - name: Build .exe and installer
+        shell: bash
+        run: |
+          export PATH="/c/Program Files (x86)/Inno Setup 6:$PATH"
+          python build_windows.py --version "$VERSION"
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: |
+            dist/SolarDesigner.exe
+            installer_output/solar-designer-*.exe
+          if-no-files-found: error
+
+  build-deb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(python3 -c "import re; print(re.search(r'^version = \"([^\"]+)\"', open('pyproject.toml').read(), re.M).group(1))")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Build .deb
+        run: python3 build_deb.py --version "$VERSION"
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-build
+          path: dist/solar-designer_*.deb
+          if-no-files-found: error
+
+  release:
+    needs: [build-windows, build-deb]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(python3 -c "import re; print(re.search(r'^version = \"([^\"]+)\"', open('pyproject.toml').read(), re.M).group(1))")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: release-assets/
+
+      - name: Download .deb artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deb-build
+          path: release-assets/
+
+      - name: List release assets
+        run: find release-assets/ -type f
+
+      - name: Create/update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v{0}', env.VERSION) }}
+          name: Solar Designer ${{ env.VERSION }}
+          body: |
+            Build automático de la última versión.
+
+            **Windows:**
+            - `SolarDesigner.exe` - ejecutable standalone (portable)
+            - `solar-designer-${{ env.VERSION }}-windows-setup.exe` - instalador autoinstalable
+
+            **Linux (Debian/Ubuntu):**
+            - `solar-designer_${{ env.VERSION }}_all.deb` - paquete .deb
+          files: |
+            release-assets/SolarDesigner.exe
+            release-assets/solar-designer-*.exe
+            release-assets/solar-designer_*.deb
+            LICENSE
+          generate_release_notes: true
+          prerelease: false

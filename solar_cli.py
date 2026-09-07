@@ -29,6 +29,15 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
+def _is_frozen():
+    return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
+
+
+def _open_browser(host, port):
+    import webbrowser
+    webbrowser.open(f"http://{host}:{port}")
+
+
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == "init":
         return init_db()
@@ -39,17 +48,25 @@ def main():
     parser.add_argument("--port", type=int, default=int(os.environ.get("SOLAR_PORT", "5000")))
     parser.add_argument("--web", action="store_true",
                         help="servir en el navegador en vez de abrir la ventana nativa")
+    parser.add_argument("--no-browser", action="store_true",
+                        help="no abrir el navegador automáticamente")
     parser.add_argument("--debug", action="store_true", help="modo depuración de Flask")
     args = parser.parse_args()
 
-    if args.web:
+    if _is_frozen() or args.web:
         import app
+        if not args.no_browser:
+            import threading
+            threading.Timer(1.5, _open_browser, args=[args.host, args.port]).start()
         app.run_server(args.host, args.port, args.debug)
         return
 
     import desktop
     if not desktop.abrir_ventana(args.host, args.port, args.debug):
         import app
+        if not args.no_browser:
+            import threading
+            threading.Timer(1.5, _open_browser, args=[args.host, args.port]).start()
         app.run_server(args.host, args.port, args.debug)
 
 

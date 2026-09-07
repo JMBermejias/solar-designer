@@ -16,8 +16,14 @@
 import json
 import os
 import sqlite3
+import sys
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+
+def _is_frozen():
+    return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
+
+
+BASE = os.path.dirname(os.path.abspath(sys.argv[0])) if _is_frozen() else os.path.dirname(os.path.abspath(__file__))
 
 
 def data_dir():
@@ -30,7 +36,11 @@ def data_dir():
     if env:
         os.makedirs(env, exist_ok=True)
         return env
-    path = os.path.join(BASE, "datos")
+    if _is_frozen():
+        local = os.environ.get("LOCALAPPDATA", os.path.expanduser("~"))
+        path = os.path.join(local, "Solar Designer", "datos")
+    else:
+        path = os.path.join(BASE, "datos")
     os.makedirs(path, exist_ok=True)
     return path
 

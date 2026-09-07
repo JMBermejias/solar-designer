@@ -17,8 +17,8 @@
 """Genera el paquete .deb de Solar Designer sin depender de dpkg-deb.
 
 Uso:
-    python3 build_deb.py            -> dist/solar-designer_1.3.0_all.deb
-    python3 build_deb.py --version 1.3.0
+    python3 build_deb.py            -> dist/solar-designer_1.3.1_all.deb
+    python3 build_deb.py --version 1.3.1
 """
 
 import argparse
@@ -322,6 +322,6 @@ def build_deb(version):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Genera el .deb de Solar Designer")
-    parser.add_argument("--version", default="1.3.0")
+    parser.add_argument("--version", default="1.3.1")
     args = parser.parse_args()
     build_deb(args.version)

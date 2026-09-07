@@ -8,3 +8,9 @@ usr-lib/
 datos/solar.db
 datos/uploads/
 datos/generated/
+
+# Artefactos de build Windows
+installer_output/
+*.spec
+*.exe
+*.msi

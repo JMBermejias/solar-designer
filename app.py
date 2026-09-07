@@ -28,7 +28,15 @@ import database
 from solar import calculations as calc
 from solar import pdf_engine
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+
+def _is_frozen():
+    return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
+
+
+if _is_frozen():
+    BASE = sys._MEIPASS
+else:
+    BASE = os.path.dirname(os.path.abspath(__file__))
 DATOS = database.data_dir()
 UPLOADS = os.path.join(DATOS, "uploads")
 GENERATED = os.path.join(DATOS, "generated")
