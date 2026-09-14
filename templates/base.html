@@ -33,6 +33,10 @@
     <div class="nav-sep">HERRAMIENTAS</div>
     <a href="{{ url_for('recursos') }}" class="{{ 'activo' if request.endpoint=='recursos' }}"><i class="fa-solid fa-globe"></i> Recursos online</a>
     <a href="{{ url_for('recursos_calculadora') }}" class="{{ 'activo' if request.endpoint=='recursos_calculadora' }}"><i class="fa-solid fa-calculator"></i> Calculadora FV</a>
+    <div class="nav-sep">SISTEMA</div>
+    <button id="btn-salir" class="nav-salir" type="button" title="Salir de la aplicación">
+      <i class="fa-solid fa-right-from-bracket"></i> Salir
+    </button>
   </nav>
   <div class="sidebar-foot">
     <i class="fa-solid fa-circle-info"></i> v{{ version }} · Enersolred
@@ -190,6 +194,26 @@
   if (aviso) {
     aviso.addEventListener("click", function (e) {
       if (e.target === aviso) aviso.classList.add("oculto");
+    });
+  }
+
+  var btnSalir = document.getElementById("btn-salir");
+  if (btnSalir) {
+    btnSalir.addEventListener("click", function () {
+      if (window.pywebview && window.pywebview.api) {
+        if (typeof window.pywebview.api.salir === "function") {
+          window.pywebview.api.salir();
+          return;
+        }
+      }
+      fetch("{{ url_for('api_salir') }}", { method: "POST" })
+        .then(function (r) { return r.json(); })
+        .then(function (resp) {
+          if (!resp || !resp.desktop) {
+            alert("Estás usando el modo navegador: cierra esta pestaña para salir de la aplicación.");
+          }
+        })
+        .catch(function () {});
     });
   }
 

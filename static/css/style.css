@@ -44,6 +44,14 @@ body {
 .nav a i { width: 18px; text-align: center; font-size: 14px; }
 .nav a:hover { background: rgba(255,255,255,.14); }
 .nav a.activo { background: #fff; color: var(--azul); font-weight: 600; box-shadow: var(--sombra); }
+.nav .nav-salir {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  color: rgba(255,255,255,.92); background: none; border: none; cursor: pointer;
+  padding: 9px 12px; border-radius: 8px; font-size: 13.5px; margin-bottom: 2px;
+  font-family: inherit; text-align: left; transition: all .12s ease;
+}
+.nav .nav-salir i { width: 18px; text-align: center; font-size: 14px; }
+.nav .nav-salir:hover { background: rgba(255,255,255,.14); color: #fff; }
 .nav-sep {
   font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
   color: rgba(255,255,255,.55); padding: 12px 12px 4px;

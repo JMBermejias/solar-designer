@@ -139,6 +139,18 @@ def api_abrir_release():
     return jsonify({"ok": abierto})
 
 
+@app.route("/api/salir", methods=["POST"])
+def api_salir():
+    try:
+        import webview
+        if webview.windows:
+            webview.windows[0].destroy()
+            return jsonify({"ok": True, "desktop": True})
+    except Exception:
+        pass
+    return jsonify({"ok": False, "desktop": False})
+
+
 # ---------------------------------------------------------------------------
 # Página principal
 # ---------------------------------------------------------------------------

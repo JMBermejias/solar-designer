@@ -15,4 +15,4 @@
 
 """Versión de Solar Designer (fuente única en tiempo de ejecución)."""
 
-__version__ = "1.3.2"
+__version__ = "1.3.3"
