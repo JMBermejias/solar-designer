@@ -139,15 +139,15 @@
     return false;
   }
 
-  function flashAlDia() {
+  function flashAlDia(ultima) {
     if (!textoBtn) return;
     var original = textoBtn.textContent;
-    textoBtn.textContent = "Al día";
+    textoBtn.textContent = ultima ? ("Al día · v" + ultima) : "Al día";
     btnUpdate.classList.add("al-dia");
     setTimeout(function () {
       textoBtn.textContent = original;
       btnUpdate.classList.remove("al-dia");
-    }, 3000);
+    }, 4000);
   }
 
   function comprobar(conMensaje) {
@@ -158,7 +158,7 @@
       .then(function (r) { return r.json(); })
       .then(function (resp) {
         if (resp && resp.error === "sin_conexion") return;
-        if (!mostrarAviso(resp) && conMensaje) flashAlDia();
+        if (!mostrarAviso(resp) && conMensaje) flashAlDia(resp && resp.nueva);
       })
       .catch(function () {})
       .finally(function () {
