@@ -93,12 +93,14 @@ def instalar_actualizacion(timeout_descarga=120, timeout_install=240):
     nueva = info.get("version") or ""
     if _version_tupla(nueva) <= _version_tupla(__version__):
         return {"ok": False, "error": "al_dia",
-                "mensaje": "No hay ninguna versión más reciente.", "ruta": None}
+                "mensaje": "Ya tienes la versión más reciente (%s)." % __version__,
+                "ruta": None}
 
     deb_url = _asset_deb(info)
     if not deb_url:
         return {"ok": False, "error": "no_deb",
-                "mensaje": "La release no tiene paquete .deb.", "ruta": None}
+                "mensaje": "La release v%s no tiene paquete .deb para "
+                           "descargar." % nueva, "ruta": None}
 
     ruta = None
     try:
@@ -115,7 +117,8 @@ def instalar_actualizacion(timeout_descarga=120, timeout_install=240):
             except Exception:
                 pass
             return {"ok": False, "error": "descarga",
-                    "mensaje": "El paquete descargado parece incompleto.", "ruta": None}
+                    "mensaje": "El paquete descargado parece incompleto "
+                               "(%s bytes)." % os.path.getsize(ruta), "ruta": None}
     except Exception as e:
         try:
             if ruta and os.path.exists(ruta):
@@ -125,7 +128,8 @@ def instalar_actualizacion(timeout_descarga=120, timeout_install=240):
         return {"ok": False, "error": "descarga",
                 "mensaje": "Error al descargar el paquete: %s" % e, "ruta": None}
 
-    instr = "Instálalo manualmente con:  sudo dpkg -i %s" % ruta
+    instr = "Si no aparece el diálogo, instálalo manualmente con:\n" \
+            "  sudo dpkg -i %s" % ruta
     try:
         proc = subprocess.run(
             ["pkexec", "dpkg", "-i", ruta],
@@ -133,23 +137,30 @@ def instalar_actualizacion(timeout_descarga=120, timeout_install=240):
         )
     except FileNotFoundError:
         return {"ok": False, "error": "sin_pkexec",
-                "mensaje": "Descargado, pero la instalación automática no está "
-                           "disponible en este sistema. %s" % instr, "ruta": ruta}
+                "mensaje": "La instalación automática no está disponible "
+                           "en este sistema (falta polkit/pkexec).\n\n%s" % instr,
+                "ruta": ruta}
     except subprocess.TimeoutExpired:
         return {"ok": False, "error": "instalacion",
-                "mensaje": "La instalación tardó demasiado. %s" % instr, "ruta": ruta}
+                "mensaje": "La instalación tardó demasiado (posible "
+                           "dialogo de contraseña sin respuesta).\n\n%s" % instr,
+                "ruta": ruta}
 
     if proc.returncode != 0:
+        stderr = (proc.stderr or "").strip()
         return {"ok": False, "error": "instalacion",
-                "mensaje": "La instalación automática falló (¿cancelaste la "
-                           "contraseña?). %s" % instr, "ruta": ruta}
+                "mensaje": "La instalación falló (¿cancelaste la "
+                           "contraseña?).\n\n%s" % instr +
+                           ("\n\nError: %s" % stderr if stderr else ""),
+                "ruta": ruta}
 
     try:
         os.remove(ruta)
     except Exception:
         pass
     return {"ok": True, "version": nueva,
-            "mensaje": "Actualizado a la versión %s." % nueva, "ruta": None}
+            "mensaje": "Actualizado correctamente a la versión %s." % nueva,
+            "ruta": None}
 
 
 def comprobar_actualizacion(timeout=6):

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block titulo %}SolarDesigner{% endblock %} · SolarDesigner</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ version }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
@@ -102,7 +102,7 @@
   </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}?v={{ version }}"></script>
 <script>
 (function () {
   var URLs = {
@@ -145,21 +145,19 @@
       .then(function (r) { return r.json(); })
       .then(function (resp) {
         if (resp && resp.ok) {
-          alert("Sistema actualizado: " + (resp.mensaje || "") +
-                "\n\nLa aplicación se cerrará; vuelve a abrirla para usar la nueva versión.");
+          alert("¡" + (resp.mensaje || "Actualizado!") +
+                "\n\nLa aplicación se cerrará ahora.\nVuelve a abrirla para usar la nueva versión.");
           cerrarApp();
         } else {
-          var msg = (resp && resp.mensaje) || "No se pudo actualizar automáticamente.";
-          if (resp && resp.error) {
-            alert(msg + "\n\nSe abrirá la página de descargas de GitHub.");
-            abrirEnNavegador(urlRelease || "");
-          } else {
-            alert(msg);
+          var msg = (resp && resp.mensaje) || "No se pudo actualizar.";
+          if (resp && resp.ruta) {
+            msg += "\n\nEl paquete se guardó en:\n" + resp.ruta;
           }
+          alert(msg);
         }
       })
       .catch(function () {
-        alert("No se pudo descargar la actualización. Comprueba tu conexión.");
+        alert("No se pudo conectar con el servidor de actualización.");
       })
       .finally(function () {
         comprobando = false;

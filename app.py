@@ -67,6 +67,16 @@ app = Flask(
 app.secret_key = os.environ.get("SOLAR_SECRET_KEY", "solar-designer-secret-2026")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
+
+@app.after_request
+def _no_cache(resp):
+    ct = resp.content_type or ""
+    if "text/html" in ct:
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+    return resp
+
 CATEGORIAS = {
     "panel": "Módulos fotovoltaicos",
     "inversor": "Inversores",
