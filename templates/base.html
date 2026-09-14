@@ -107,7 +107,9 @@
 (function () {
   var URLs = {
     check: "{{ url_for('api_check_update') }}",
-    abrir: "{{ url_for('api_abrir_release') }}"
+    abrir: "{{ url_for('api_abrir_release') }}",
+    aplicar: "{{ url_for('api_aplicar_update') }}",
+    salir: "{{ url_for('api_salir') }}"
   };
   var btnUpdate = document.getElementById("btn-update");
   var textoBtn = document.getElementById("btn-update-texto");
@@ -122,6 +124,48 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: (url || "") })
     }).catch(function () {});
+  }
+
+  function cerrarApp() {
+    if (window.pywebview && window.pywebview.api
+        && typeof window.pywebview.api.salir === "function") {
+      window.pywebview.api.salir();
+      return;
+    }
+    fetch(URLs.salir, { method: "POST" }).catch(function () {});
+  }
+
+  function aplicarActualizacion() {
+    if (comprobando) return;
+    comprobando = true;
+    if (textoBtn) textoBtn.textContent = "Descargando...";
+    if (btnUpdate) btnUpdate.classList.add("comprobando");
+
+    fetch(URLs.aplicar, { method: "POST" })
+      .then(function (r) { return r.json(); })
+      .then(function (resp) {
+        if (resp && resp.ok) {
+          alert("Sistema actualizado: " + (resp.mensaje || "") +
+                "\n\nLa aplicación se cerrará; vuelve a abrirla para usar la nueva versión.");
+          cerrarApp();
+        } else {
+          var msg = (resp && resp.mensaje) || "No se pudo actualizar automáticamente.";
+          if (resp && resp.error) {
+            alert(msg + "\n\nSe abrirá la página de descargas de GitHub.");
+            abrirEnNavegador(urlRelease || "");
+          } else {
+            alert(msg);
+          }
+        }
+      })
+      .catch(function () {
+        alert("No se pudo descargar la actualización. Comprueba tu conexión.");
+      })
+      .finally(function () {
+        comprobando = false;
+        if (textoBtn) textoBtn.textContent = "Actualizar";
+        if (btnUpdate) btnUpdate.classList.remove("comprobando");
+      });
   }
 
   function mostrarAviso(resp) {
@@ -170,7 +214,7 @@
   if (btnUpdate) {
     btnUpdate.addEventListener("click", function () {
       if (urlRelease) {
-        abrirEnNavegador(urlRelease);
+        aplicarActualizacion();
       } else {
         comprobar(true);
       }
@@ -180,7 +224,7 @@
   var btnDescargar = document.getElementById("aviso-descargar");
   if (btnDescargar) {
     btnDescargar.addEventListener("click", function () {
-      abrirEnNavegador(urlRelease);
+      aplicarActualizacion();
     });
   }
 
@@ -200,13 +244,12 @@
   var btnSalir = document.getElementById("btn-salir");
   if (btnSalir) {
     btnSalir.addEventListener("click", function () {
-      if (window.pywebview && window.pywebview.api) {
-        if (typeof window.pywebview.api.salir === "function") {
-          window.pywebview.api.salir();
-          return;
-        }
+      if (window.pywebview && window.pywebview.api
+          && typeof window.pywebview.api.salir === "function") {
+        window.pywebview.api.salir();
+        return;
       }
-      fetch("{{ url_for('api_salir') }}", { method: "POST" })
+      fetch(URLs.salir, { method: "POST" })
         .then(function (r) { return r.json(); })
         .then(function (resp) {
           if (!resp || !resp.desktop) {

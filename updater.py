@@ -24,7 +24,11 @@ sea inmediata. Si no hay conexión a internet se devuelve un estado neutro
 """
 
 import json
+import os
 import re
+import shutil
+import subprocess
+import tempfile
 import time
 import urllib.parse
 import urllib.request
@@ -58,7 +62,94 @@ def _ultima_version(timeout):
         "url": data.get("html_url") or RELEASE_URL,
         "notas": (data.get("body") or "").strip(),
         "publicado": data.get("published_at"),
+        "assets": data.get("assets") or [],
     }
+
+
+def _asset_deb(info):
+    for a in info.get("assets") or []:
+        if (a.get("name") or "").endswith(".deb"):
+            return a.get("browser_download_url")
+    return None
+
+
+def instalar_actualizacion(timeout_descarga=120, timeout_install=240):
+    """Descarga e instala la versión más reciente (Linux/.deb via pkexec).
+
+    Devuelve un dict con ok, version, error, mensaje y, en algunos fallos,
+    la ruta del .deb descargado para instalarlo a mano (sudo dpkg -i).
+    """
+    from version import __version__
+
+    try:
+        info = _ultima_version(8)
+    except Exception:
+        info = None
+    if not info:
+        return {"ok": False, "error": "consulta",
+                "mensaje": "No se pudo consultar GitHub para descargar la actualización.",
+                "ruta": None}
+
+    nueva = info.get("version") or ""
+    if _version_tupla(nueva) <= _version_tupla(__version__):
+        return {"ok": False, "error": "al_dia",
+                "mensaje": "No hay ninguna versión más reciente.", "ruta": None}
+
+    deb_url = _asset_deb(info)
+    if not deb_url:
+        return {"ok": False, "error": "no_deb",
+                "mensaje": "La release no tiene paquete .deb.", "ruta": None}
+
+    ruta = None
+    try:
+        fd, ruta = tempfile.mkstemp(prefix="solar-designer-", suffix=".deb")
+        os.close(fd)
+        req = urllib.request.Request(deb_url,
+                                     headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=timeout_descarga) as resp:
+            with open(ruta, "wb") as f:
+                shutil.copyfileobj(resp, f)
+        if os.path.getsize(ruta) < 1000:
+            try:
+                os.remove(ruta)
+            except Exception:
+                pass
+            return {"ok": False, "error": "descarga",
+                    "mensaje": "El paquete descargado parece incompleto.", "ruta": None}
+    except Exception as e:
+        try:
+            if ruta and os.path.exists(ruta):
+                os.remove(ruta)
+        except Exception:
+            pass
+        return {"ok": False, "error": "descarga",
+                "mensaje": "Error al descargar el paquete: %s" % e, "ruta": None}
+
+    instr = "Instálalo manualmente con:  sudo dpkg -i %s" % ruta
+    try:
+        proc = subprocess.run(
+            ["pkexec", "dpkg", "-i", ruta],
+            capture_output=True, text=True, timeout=timeout_install,
+        )
+    except FileNotFoundError:
+        return {"ok": False, "error": "sin_pkexec",
+                "mensaje": "Descargado, pero la instalación automática no está "
+                           "disponible en este sistema. %s" % instr, "ruta": ruta}
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "instalacion",
+                "mensaje": "La instalación tardó demasiado. %s" % instr, "ruta": ruta}
+
+    if proc.returncode != 0:
+        return {"ok": False, "error": "instalacion",
+                "mensaje": "La instalación automática falló (¿cancelaste la "
+                           "contraseña?). %s" % instr, "ruta": ruta}
+
+    try:
+        os.remove(ruta)
+    except Exception:
+        pass
+    return {"ok": True, "version": nueva,
+            "mensaje": "Actualizado a la versión %s." % nueva, "ruta": None}
 
 
 def comprobar_actualizacion(timeout=6):

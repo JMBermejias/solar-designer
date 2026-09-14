@@ -139,6 +139,11 @@ def api_abrir_release():
     return jsonify({"ok": abierto})
 
 
+@app.route("/api/aplicar-update", methods=["POST"])
+def api_aplicar_update():
+    return jsonify(updater.instalar_actualizacion())
+
+
 @app.route("/api/salir", methods=["POST"])
 def api_salir():
     try:
