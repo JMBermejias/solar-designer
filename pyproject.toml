@@ -25,7 +25,7 @@ solar = "solar_cli:main"
 solar-init = "solar_cli:init_db"
 
 [tool.setuptools]
-py-modules = ["app", "database", "desktop", "solar_cli"]
+py-modules = ["app", "database", "desktop", "solar_cli", "version", "updater"]
 packages = ["solar"]
 
 [tool.setuptools.package-data]

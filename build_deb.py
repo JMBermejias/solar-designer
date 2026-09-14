@@ -139,7 +139,8 @@ def build_tree():
     lib = os.path.join(ROOT, "usr-lib")
     os.makedirs(lib, exist_ok=True)
     # copia de los módulos a un árbol limpio
-    for f in ("app.py", "database.py", "desktop.py", "solar_cli.py"):
+    for f in ("app.py", "database.py", "desktop.py", "solar_cli.py",
+              "version.py", "updater.py"):
         src = os.path.join(ROOT, f)
         dst = os.path.join(lib, f)
         with open(src, "rb") as fi, open(dst, "wb") as fo:

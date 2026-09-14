@@ -35,7 +35,7 @@
     <a href="{{ url_for('recursos_calculadora') }}" class="{{ 'activo' if request.endpoint=='recursos_calculadora' }}"><i class="fa-solid fa-calculator"></i> Calculadora FV</a>
   </nav>
   <div class="sidebar-foot">
-    <i class="fa-solid fa-circle-info"></i> v1.3.1 · Enersolred
+    <i class="fa-solid fa-circle-info"></i> v{{ version }} · Enersolred
   </div>
 </aside>
 
@@ -44,11 +44,18 @@
     <div class="topbar-titulo">
       {% block cabecera %}<h1>Panel de control</h1>{% endblock %}
     </div>
-    <div class="topbar-empresa">
-      <i class="fa-solid fa-building"></i>
-      <div>
-        <strong>{{ empresa.nombre }}</strong>
-        <span>{{ empresa.cif }}</span>
+    <div class="topbar-derecha">
+      <button id="btn-update" class="btn-update" type="button" title="Comprobar actualizaciones">
+        <i class="fa-solid fa-rotate"></i>
+        <span id="btn-update-texto">Actualizar</span>
+        <span id="upd-badge" class="upd-badge oculto" aria-hidden="true">1</span>
+      </button>
+      <div class="topbar-empresa">
+        <i class="fa-solid fa-building"></i>
+        <div>
+          <strong>{{ empresa.nombre }}</strong>
+          <span>{{ empresa.cif }}</span>
+        </div>
       </div>
     </div>
   </header>
@@ -77,7 +84,118 @@
   <img id="lightbox-img" src="" alt="">
 </div>
 
+<div id="aviso-update" class="aviso-update oculto">
+  <div class="aviso-update-texto">
+    <i class="fa-solid fa-circle-up"></i>
+    <div>
+      <strong>Nueva versión v<span id="aviso-nueva"></span> disponible</strong>
+      <span>Estás usando la v<span id="aviso-actual"></span>. Descarga la última versión desde GitHub.</span>
+    </div>
+  </div>
+  <div class="aviso-update-acciones">
+    <button class="btn btn-verde btn-mini" id="aviso-descargar" type="button"><i class="fa-solid fa-download"></i> Descargar</button>
+    <button class="btn btn-mini" id="aviso-cerrar" type="button" title="Ahora no"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+</div>
+
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+(function () {
+  var URLs = {
+    check: "{{ url_for('api_check_update') }}",
+    abrir: "{{ url_for('api_abrir_release') }}"
+  };
+  var btnUpdate = document.getElementById("btn-update");
+  var textoBtn = document.getElementById("btn-update-texto");
+  var badge = document.getElementById("upd-badge");
+  var aviso = document.getElementById("aviso-update");
+  var urlRelease = "";
+  var comprobando = false;
+
+  function abrirEnNavegador(url) {
+    fetch(URLs.abrir, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: (url || "") })
+    }).catch(function () {});
+  }
+
+  function mostrarAviso(resp) {
+    if (resp && resp.disponible) {
+      urlRelease = resp.url || "";
+      if (badge) badge.classList.remove("oculto");
+      if (btnUpdate) btnUpdate.classList.add("hay-update");
+      if (aviso) {
+        document.getElementById("aviso-nueva").textContent = resp.nueva || "";
+        document.getElementById("aviso-actual").textContent = resp.actual || "";
+        aviso.classList.remove("oculto");
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function flashAlDia() {
+    if (!textoBtn) return;
+    var original = textoBtn.textContent;
+    textoBtn.textContent = "Al día";
+    btnUpdate.classList.add("al-dia");
+    setTimeout(function () {
+      textoBtn.textContent = original;
+      btnUpdate.classList.remove("al-dia");
+    }, 3000);
+  }
+
+  function comprobar(conMensaje) {
+    if (comprobando) return;
+    comprobando = true;
+    if (btnUpdate) btnUpdate.classList.add("comprobando");
+    fetch(URLs.check)
+      .then(function (r) { return r.json(); })
+      .then(function (resp) {
+        if (resp && resp.error === "sin_conexion") return;
+        if (!mostrarAviso(resp) && conMensaje) flashAlDia();
+      })
+      .catch(function () {})
+      .finally(function () {
+        comprobando = false;
+        if (btnUpdate) btnUpdate.classList.remove("comprobando");
+      });
+  }
+
+  if (btnUpdate) {
+    btnUpdate.addEventListener("click", function () {
+      if (urlRelease) {
+        abrirEnNavegador(urlRelease);
+      } else {
+        comprobar(true);
+      }
+    });
+  }
+
+  var btnDescargar = document.getElementById("aviso-descargar");
+  if (btnDescargar) {
+    btnDescargar.addEventListener("click", function () {
+      abrirEnNavegador(urlRelease);
+    });
+  }
+
+  var btnCerrar = document.getElementById("aviso-cerrar");
+  if (btnCerrar) {
+    btnCerrar.addEventListener("click", function () {
+      if (aviso) aviso.classList.add("oculto");
+    });
+  }
+
+  if (aviso) {
+    aviso.addEventListener("click", function (e) {
+      if (e.target === aviso) aviso.classList.add("oculto");
+    });
+  }
+
+  comprobar(false);
+})();
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

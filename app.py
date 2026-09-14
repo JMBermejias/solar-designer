@@ -25,8 +25,10 @@ from flask import (Flask, abort, flash, jsonify, redirect, render_template,
                    request, send_file, send_from_directory, url_for)
 
 import database
+import updater
 from solar import calculations as calc
 from solar import pdf_engine
+from version import __version__ as VERSION
 
 
 def _is_frozen():
@@ -117,7 +119,24 @@ def nuevo_numero(prefijo, tabla):
 def inject_globals():
     return {"empresa": empresa(), "cat_materiales": CATEGORIAS, "cat_herr": CATEGORIAS_HERR,
             "periodos": PERIODOS, "meses": calc.MESES, "today": date.today().isoformat(),
-            "TAREAS_MANT": TAREAS_MANT}
+            "TAREAS_MANT": TAREAS_MANT, "version": VERSION}
+
+
+@app.route("/api/check-update")
+def api_check_update():
+    return jsonify(updater.comprobar_actualizacion())
+
+
+@app.route("/api/abrir-release", methods=["POST"])
+def api_abrir_release():
+    url = None
+    try:
+        cuerpo = request.get_json(silent=True) or {}
+        url = cuerpo.get("url")
+    except Exception:
+        url = None
+    abierto = updater.abrir_release(url)
+    return jsonify({"ok": abierto})
 
 
 # ---------------------------------------------------------------------------
