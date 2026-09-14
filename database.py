@@ -26,22 +26,84 @@ def _is_frozen():
 BASE = os.path.dirname(os.path.abspath(sys.argv[0])) if _is_frozen() else os.path.dirname(os.path.abspath(__file__))
 
 
+def _backup_sqlite(src, dst):
+    import sqlite3 as sq
+    s = sq.connect(src)
+    d = sq.connect(dst)
+    try:
+        s.backup(d)
+    finally:
+        d.close()
+        s.close()
+
+
+def _migrar_historial(dest):
+    """Si el destino no tiene aún base de datos, recupera los datos de
+    instalaciones previas (otras rutas/versiones del directorio de datos).
+
+    - /var/lib/solar-designer (instalación del sistema, dueña root)
+    - <BASE>/datos (instalación antigua que guardaba junto al código)
+
+    Solo actúa si el destino está vacío, así nunca pisa datos actuales.
+    """
+    if _is_frozen():
+        return
+    if os.path.exists(os.path.join(dest, "solar.db")):
+        return
+    candidatos = []
+    var_dir = "/var/lib/solar-designer"
+    if (var_dir != dest and
+            os.path.isfile(os.path.join(var_dir, "solar.db"))):
+        candidatos.append(var_dir)
+    leg_dir = os.path.join(BASE, "datos")
+    if (leg_dir != dest and
+            os.path.isfile(os.path.join(leg_dir, "solar.db"))):
+        candidatos.append(leg_dir)
+    for src in candidatos:
+        try:
+            if not os.access(os.path.join(src, "solar.db"), os.R_OK):
+                continue
+            os.makedirs(dest, exist_ok=True)
+            _backup_sqlite(os.path.join(src, "solar.db"),
+                           os.path.join(dest, "solar.db"))
+            import shutil
+            for sub in ("uploads", "generated"):
+                s = os.path.join(src, sub)
+                d = os.path.join(dest, sub)
+                if os.path.isdir(s) and not os.path.isdir(d):
+                    shutil.copytree(s, d)
+            return
+        except Exception:
+            continue
+
+
 def data_dir():
     """Directorio de datos (SQLite, uploads, PDFs).
 
     Se puede sobreescribir con la variable de entorno SOLAR_DATA_DIR
     (por ejemplo, un volumen persistente en Docker).
+
+    Sin variable, usa siempre la carpeta de datos del usuario (XDG_DATA_HOME
+    o ~/.local/share/solar-designer) para que los datos sobrevivan a
+    instalaciones y actualizaciones del paquete .deb.
     """
     env = os.environ.get("SOLAR_DATA_DIR")
     if env:
         os.makedirs(env, exist_ok=True)
+        _migrar_historial(env)
         return env
     if _is_frozen():
         local = os.environ.get("LOCALAPPDATA", os.path.expanduser("~"))
         path = os.path.join(local, "Solar Designer", "datos")
     else:
-        path = os.path.join(BASE, "datos")
+        xdg = os.environ.get("XDG_DATA_HOME")
+        if xdg:
+            path = os.path.join(xdg, "solar-designer")
+        else:
+            path = os.path.join(
+                os.path.expanduser("~/.local/share"), "solar-designer")
     os.makedirs(path, exist_ok=True)
+    _migrar_historial(path)
     return path
 
 

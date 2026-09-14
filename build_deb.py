@@ -94,14 +94,11 @@ if [ -x /usr/lib/solar-designer/venv/bin/python ]; then
 else
     PY=python3
 fi
-# Directorio de datos: /var/lib/solar-designer si es escribible;
-# si no (usuario sin privilegios), directorio de datos del usuario.
+# Directorio de datos: SIEMPRE la carpeta de datos del usuario (XDG),
+# nunca /var/lib ni la carpeta del programa, para que los datos de cada
+# usuario se conserven en cada actualización del paquete.
 if [ -z "${SOLAR_DATA_DIR:-}" ]; then
-    if [ -d /var/lib/solar-designer ] && [ -w /var/lib/solar-designer ]; then
-        export SOLAR_DATA_DIR=/var/lib/solar-designer
-    else
-        export SOLAR_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/solar-designer"
-    fi
+    export SOLAR_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/solar-designer"
 fi
 export SOLAR_APP_DIR=/usr/share/solar-designer
 exec "$PY" /usr/lib/solar-designer/solar_cli.py "$@"
@@ -114,11 +111,7 @@ else
     PY=python3
 fi
 if [ -z "${SOLAR_DATA_DIR:-}" ]; then
-    if [ -d /var/lib/solar-designer ] && [ -w /var/lib/solar-designer ]; then
-        export SOLAR_DATA_DIR=/var/lib/solar-designer
-    else
-        export SOLAR_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/solar-designer"
-    fi
+    export SOLAR_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/solar-designer"
 fi
 export SOLAR_APP_DIR=/usr/share/solar-designer
 exec "$PY" /usr/lib/solar-designer/solar_cli.py init
